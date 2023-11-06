@@ -1,7 +1,7 @@
-#shader vertex
+/*#shader vertex
 #version 330 core
 
-layout (location = 0) in vec3 aPos;
+layout(location = 0) in vec3 aPos;
 void main()
 {
     gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
@@ -15,5 +15,5 @@ uniform vec4 U_Color;
 
 void main()
 {
-   FragColor = U_Color;
-};
+    FragColor = U_Color;
+}*/

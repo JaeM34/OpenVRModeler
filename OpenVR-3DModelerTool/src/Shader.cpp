@@ -7,6 +7,14 @@
 #include <sstream>
 #include "GLLoader.h"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
 Shader::Shader(const std::string& filepath)
 	: m_Filepath(filepath), m_RendererID(0)
 {
@@ -113,6 +121,13 @@ void Shader::Unbind() const
     GLCall(glUseProgram(0));
 }
 
+// ...
+
+void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix)
+{
+    GLCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)));
+}
+
 void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
 {
     GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
@@ -126,8 +141,8 @@ int Shader::GetUniformLocation(const std::string& name)
     }
 
     GLCall(int location = glGetUniformLocation(m_RendererID, name.c_str()));
-    if(location == -1)
-    { 
+    if (location == -1)
+    {
         std::cout << "Warning: uniform " << name << " does not exist" << std::endl;
     }
     m_UniformLocationCache[name] = location;
