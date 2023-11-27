@@ -14,6 +14,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+struct vector {
+    float x;
+    float y;
+    float z;
+};
+
 
 Shader::Shader(const std::string& filepath)
 	: m_Filepath(filepath), m_RendererID(0)
