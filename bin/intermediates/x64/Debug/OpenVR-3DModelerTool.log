@@ -1,11 +1,9 @@
-﻿  glad.c
-  Application.cpp
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(12,10): fatal  error C1083: Cannot open include file: 'vec3.hpp': No such file or directory
-  GLLoader.cpp
-  IndexBuffer.cpp
-  Renderer.cpp
-  Shader.cpp
-  VertexArray.cpp
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\VertexArray.cpp(22,3): warning C4312: 'type cast': conversion from 'unsigned int' to 'const void *' of greater size
-  VertexBuffer.cpp
-  Generating Code...
+﻿  Application.cpp
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(119,47): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(199,39): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(248,16): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(249,18): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(314,19): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(328,9): warning C4101: 'remove_index': unreferenced local variable
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  OpenVR-3DModelerTool.vcxproj -> C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\x64\Debug\OpenVR-3DModelerTool.exe

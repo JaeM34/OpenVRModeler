@@ -16,7 +16,8 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
     // Bind Index Array
     ib.Bind();
 	// Draw.
-	GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
+	//GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
+    GLCall(glDrawElements(GL_LINES, ib.GetCount(), GL_UNSIGNED_INT, 0));
 }
 
 void Renderer::SetBackgroundClr(float v0, float v1, float v2, float v3) const
