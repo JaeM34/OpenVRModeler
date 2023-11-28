@@ -26,7 +26,6 @@ struct Vertex {
 
 
 
-
 // window settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
@@ -63,6 +62,10 @@ std::vector<GLuint> indices;
 
 
 unsigned int index_pos;
+
+
+
+void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing);
 
 int main() {
     // Initialize GLFW
@@ -124,8 +127,6 @@ int main() {
         addVertex(v, vertices, indices);
     }
 
-
-
     Renderer renderer;
     // Use the shader program
     // Enable depth testing
@@ -139,7 +140,19 @@ int main() {
     float r = 0, g = 0, b = 0;
     float a = 0.001f, bb = 0.002f, c = 0.003f;
 
+    unsigned int gridSizeX = 450; // Number of squares along the X-axis
+    unsigned int gridSizeZ = 250; // Number of squares along the Z-axis
+    float gridSpacing = 1.0f;    // Spacing between grid squares
 
+    std::vector<GLfloat> gridVertices;
+    std::vector<GLuint> gridIndices;
+    createGridData(gridVertices, gridIndices, gridSizeX, gridSizeZ, gridSpacing);
+    VertexBuffer vbGrid(&gridVertices[0], sizeof(GLfloat)* gridVertices.size());
+    IndexBuffer ibGrid(&gridIndices[0], gridIndices.size());
+    VertexArray vaGrid;
+    VertexBufferLayout layoutGrid;
+    layoutGrid.Push<float>(3);
+    vaGrid.AddBuffer(vbGrid, layoutGrid);
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
@@ -172,10 +185,6 @@ int main() {
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         shader.SetUniformMat4f("proj", projection);
 
-        // Model matrix: Rotate the pyramid
-        glm::mat4 model = glm::mat4(1.0f);
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f)); // Pyramid spin
-        shader.SetUniformMat4f("model", model);
 
         // RAINBOW SHADER LOGIC!!!
         r += a;
@@ -193,11 +202,25 @@ int main() {
         {
             c *= -1.0f;
         }
+        glm::mat4 m = glm::mat4(1.0f);
+        shader.SetUniformMat4f("model", m);
+
         shader.SetUniform4f("U_Color", r, g, b, 1.0f);
-        // Draw the pyramid
         renderer.Draw(va, ib, shader);
         vertex_size = vertices.size() / 3;
         total_edges += 2;
+
+        //grid
+        glm::mat4 grid = glm::mat4(1.0f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        grid = glm::translate(grid, glm::vec3(-50.0f, -0.5f, -100.0f));
+        shader.SetUniformMat4f("model", grid);
+        shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
+        glLineWidth(5.0f);
+
+        renderer.Draw(vaGrid, ibGrid, shader);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -332,6 +355,43 @@ void removeVertex(unsigned int index)
         {
             verticese.erase(verticese.begin()+i);
             return;
+        }
+    }
+}
+
+// function to create grid
+void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing) {
+    for (unsigned int i = 0; i < gridSizeX; ++i) {
+        for (unsigned int j = 0; j < gridSizeZ; ++j) {
+            float x = i * gridSpacing;
+            float y = 0.0f;
+            float z = j * gridSpacing;
+
+            // Add vertices for each corner of the square
+            gridVertices.push_back(x);
+            gridVertices.push_back(y);
+            gridVertices.push_back(z);
+
+            gridVertices.push_back(x + gridSpacing);
+            gridVertices.push_back(y);
+            gridVertices.push_back(z);
+
+            gridVertices.push_back(x + gridSpacing);
+            gridVertices.push_back(y);
+            gridVertices.push_back(z + gridSpacing);
+
+            gridVertices.push_back(x);
+            gridVertices.push_back(y);
+            gridVertices.push_back(z + gridSpacing);
+
+            // Add indices for the square
+            GLuint baseIndex = static_cast<GLuint>(gridVertices.size() / 3) - 4;
+            gridIndices.push_back(baseIndex);
+            gridIndices.push_back(baseIndex + 1);
+            gridIndices.push_back(baseIndex + 2);
+            gridIndices.push_back(baseIndex + 2);
+            gridIndices.push_back(baseIndex + 3);
+            gridIndices.push_back(baseIndex);
         }
     }
 }
