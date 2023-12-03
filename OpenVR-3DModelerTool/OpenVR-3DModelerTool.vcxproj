@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\imGui</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\imGui</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +140,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Dependencies\glad\src\glad.c" />
+    <ClCompile Include="..\Dependencies\imGui\imgui.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_demo.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_draw.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_tables.cpp" />
+    <ClCompile Include="..\Dependencies\imGui\imgui_widgets.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\GLLoader.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
@@ -149,6 +156,15 @@
     <ClCompile Include="src\VertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Dependencies\imGui\imconfig.h" />
+    <ClInclude Include="..\Dependencies\imGui\imgui.h" />
+    <ClInclude Include="..\Dependencies\imGui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\Dependencies\imGui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\Dependencies\imGui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Dependencies\imGui\imgui_internal.h" />
+    <ClInclude Include="..\Dependencies\imGui\imstb_rectpack.h" />
+    <ClInclude Include="..\Dependencies\imGui\imstb_textedit.h" />
+    <ClInclude Include="..\Dependencies\imGui\imstb_truetype.h" />
     <ClInclude Include="src\GLLoader.h" />
     <ClInclude Include="src\IndexBuffer.h" />
     <ClInclude Include="src\Renderer.h" />

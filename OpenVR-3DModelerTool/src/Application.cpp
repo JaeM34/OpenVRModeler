@@ -6,7 +6,6 @@
 #include "VertexBufferLayout.h"
 #include "Renderer.h"
 #include <iostream>
-
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
@@ -14,6 +13,10 @@
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 #include <glm/gtc/type_ptr.hpp>
+
+#include"imgui.h"
+#include"imgui_impl_glfw.h"
+#include"imgui_impl_opengl3.h"
 
 struct Vertex {
     unsigned int index;
@@ -136,9 +139,6 @@ int main() {
     glfwSetCursorPosCallback(window, cursor_pos_callback);
     // Set up mouse button callback function
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-    
-    float r = 0, g = 0, b = 0;
-    float a = 0.001f, bb = 0.002f, c = 0.003f;
 
     unsigned int gridSizeX = 450; // Number of squares along the X-axis
     unsigned int gridSizeZ = 250; // Number of squares along the Z-axis
@@ -154,26 +154,39 @@ int main() {
     layoutGrid.Push<float>(3);
     vaGrid.AddBuffer(vbGrid, layoutGrid);
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
+    glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f); 
+
     // render loop
     while (!glfwWindowShouldClose(window)) {
-        index_pos = vertex_size - 1;
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
+        processInput(window);
+
+        ImGui::Begin("Tool");
+        ImGui::Text("Color");
+        ImGui::ColorEdit4("Color", glm::value_ptr(objectColor)); 
+        ImGui::End();
+
+        index_pos = vertex_size - 1;
         // Use the shader program
         shader.Bind();
         // Generating buffers for Arrays and Index buffers
-
         VertexArray va;
         VertexBufferLayout layout;
         layout.Push<float>(3);
-
-
         VertexBuffer vb(&vertices[0], sizeof(GLfloat) * 3 * vertex_size);
-
         va.AddBuffer(vb, layout);
         IndexBuffer ib(&indices[0], sizeof(GLuint) * 2 * total_edges);
-        processInput(window);
-
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -185,27 +198,10 @@ int main() {
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         shader.SetUniformMat4f("proj", projection);
 
-
-        // RAINBOW SHADER LOGIC!!!
-        r += a;
-        g += bb;
-        b += c;
-        if (r > 1.0f || r < 0.0f)
-        {
-            a *= -1.0f;
-        }
-        if (g > 1.0f || g < 0.0f)
-        {
-            bb *= -1.0f;
-        }
-        if (b > 1.0f || b < 0.0f)
-        {
-            c *= -1.0f;
-        }
         glm::mat4 m = glm::mat4(1.0f);
         shader.SetUniformMat4f("model", m);
-
-        shader.SetUniform4f("U_Color", r, g, b, 1.0f);
+        
+        shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
         renderer.Draw(va, ib, shader);
         vertex_size = vertices.size() / 3;
         total_edges += 2;
@@ -220,13 +216,19 @@ int main() {
         glLineWidth(5.0f);
 
         renderer.Draw(vaGrid, ibGrid, shader);
-
+        
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+
         glfwPollEvents();
     }
 
-    // Clean up and terminate GLFW
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwTerminate();
 
     return 0;
@@ -246,7 +248,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 
     // Gets the position of the vertex at the mouse position
-    if (button == GLFW_MOUSE_BUTTON_LEFT)
+   if (button == GLFW_MOUSE_BUTTON_RIGHT)
     {
         glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
 
@@ -254,9 +256,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920/2)+1.0f),  (float)(lastMouseY/(1080/2)+1.0f), 0, {(unsigned int)(index_pos + 1)}}, vertices, indices);
         index_pos++;
     }
-
+    
 
 }
+
+
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     if (isMousePressed) {
         double xOffset = xpos - lastMouseX;
