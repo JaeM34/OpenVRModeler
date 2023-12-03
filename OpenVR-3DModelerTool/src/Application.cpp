@@ -44,9 +44,10 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 //vector
-int vertex_size;
+int vertex_size = 0;
 int total_edges;
 std::vector<Vertex> verticese;
+
 
 float fov = 45.0f;
 
@@ -228,10 +229,14 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
     glfwTerminate();
 
     return 0;
+}
+
+//calculateDistance float for removeVertex functionality
+float calculateDistance(float x1, float y1, float x2, float y2) {
+    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
 
@@ -256,11 +261,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920/2)+1.0f),  (float)(lastMouseY/(1080/2)+1.0f), 0, {(unsigned int)(index_pos + 1)}}, vertices, indices);
         index_pos++;
     }
-    
+
 
 }
-
-
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     if (isMousePressed) {
         double xOffset = xpos - lastMouseX;
@@ -349,20 +352,42 @@ void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& in
     std::cout << std::endl;
 }
 
-void removeVertex(unsigned int index)
-{
-    int i;
-    int remove_index;
-    for (i = 0; i < vertex_size; i++)
-    {
-        if (verticese[i].index == index)
-        {
-            verticese.erase(verticese.begin()+i);
-            return;
+
+/*void removeVertex(unsigned int index) {
+    std::cout << "Trying to remove vertex with index: " << index << std::endl; 
+
+    auto it = std::find_if(verticese.begin(), verticese.end(), [index](const Vertex& v) {
+        return v.index == index;
+
+        });
+
+    if (it != verticese.end()) {
+        std::cout << "Removing Vertex: " << it->index << std::endl;
+
+        verticese.erase(it);
+
+        for (auto& vertex : verticese) {
+            auto& edges = vertex.edges;
+            edges.erase(std::remove(edges.begin(), edges.end(), index), edges.end());
+        }
+
+        vertices.clear();
+        indices.clear();
+
+        for (Vertex v : verticese) {
+            addVertex(v, vertices, indices);
         }
     }
-}
 
+    else {
+        std::cerr << "Vertex with index " << index << " not found! " << std::endl;
+
+    }
+
+}
+void createData(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices)
+{
+}*/
 // function to create grid
 void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing) {
     for (unsigned int i = 0; i < gridSizeX; ++i) {
