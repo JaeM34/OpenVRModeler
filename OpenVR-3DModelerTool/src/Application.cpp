@@ -84,7 +84,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a GLFW window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Pyramid", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "VR Tool", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -158,12 +158,12 @@ int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsDark;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
     glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f); 
-
+    glm::mat4 m = glm::mat4(1.0f);
     // render loop
     while (!glfwWindowShouldClose(window)) {
         
@@ -174,8 +174,22 @@ int main() {
         processInput(window);
 
         ImGui::Begin("Tool");
-        ImGui::Text("Color");
+        ImGui::Text("Settings");
         ImGui::ColorEdit4("Color", glm::value_ptr(objectColor)); 
+        // ImGui slider for translation in X-axis
+        ImGui::SliderFloat("Translate X", &m[3][0], -10.0f, 10.0f);
+
+        // ImGui slider for translation in Y-axis
+        ImGui::SliderFloat("Translate Y", &m[3][1], -0.50f, 10.0f);
+
+        // ImGui slider for translation in Z-axis
+        ImGui::SliderFloat("Translate Z", &m[3][2], -10.0f, 10.0f);
+
+        if (ImGui::Button("Add Vertex")) {
+            addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920 / 2) + 1.0f),  (float)(lastMouseY / (1080 / 2) + 1.0f), 0, {(unsigned int)(index_pos + 1)} }, vertices, indices);
+            index_pos++;
+        }
+
         ImGui::End();
 
         index_pos = vertex_size - 1;
@@ -199,11 +213,11 @@ int main() {
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         shader.SetUniformMat4f("proj", projection);
 
-        glm::mat4 m = glm::mat4(1.0f);
+        m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
         shader.SetUniformMat4f("model", m);
-        
         shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
         renderer.Draw(va, ib, shader);
+
         vertex_size = vertices.size() / 3;
         total_edges += 2;
 
@@ -261,8 +275,31 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920/2)+1.0f),  (float)(lastMouseY/(1080/2)+1.0f), 0, {(unsigned int)(index_pos + 1)}}, vertices, indices);
         index_pos++;
     }
+   /*if (button == GLFW_MOUSE_BUTTON_RIGHT)
+   {
+       double lastMouseX, lastMouseY;
+       glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
 
+       float closestDistance = std::numeric_limits<float>::max();
+       unsigned int closestVertexIndex = 0;
 
+       for (const Vertex& vertex : verticese) {
+           float distance = calculateDistance(
+               lastMouseX, lastMouseY,
+
+               vertex.x, vertex.y
+
+           );
+
+           if (distance < closestDistance) {
+               closestDistance = distance;
+               closestVertexIndex = vertex.index;
+           }
+       }
+
+       removeVertex(closestVertexIndex);
+   }
+   */
 }
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     if (isMousePressed) {
@@ -352,8 +389,8 @@ void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& in
     std::cout << std::endl;
 }
 
-
-/*void removeVertex(unsigned int index) {
+/*
+void removeVertex(unsigned int index) {
     std::cout << "Trying to remove vertex with index: " << index << std::endl; 
 
     auto it = std::find_if(verticese.begin(), verticese.end(), [index](const Vertex& v) {
