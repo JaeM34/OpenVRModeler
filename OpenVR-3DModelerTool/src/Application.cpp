@@ -400,6 +400,11 @@ int main() {
             ImGui::SliderFloat("Rectangular: Translate Z", &m2[3][2], -10.0f, 10.0f);
             renderer.Draw1(varec, ibrec, shader);
         }
+        
+        if (ImGui::Button("Close Application")) {
+            //Action to close the application
+            return 0;
+        }
 
 
         ImGui::End();
