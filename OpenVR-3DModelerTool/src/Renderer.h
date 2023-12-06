@@ -11,6 +11,7 @@ private:
 public:
 	Renderer();
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const;
+	void Draw1(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const;
 	void SetBackgroundClr(float v0, float v1, float v2, float v3) const;
 	void Clear() const;
 };
