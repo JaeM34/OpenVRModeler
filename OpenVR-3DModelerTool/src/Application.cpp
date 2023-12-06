@@ -651,3 +651,81 @@ void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gri
         }
     }
 }
+
+//function for creating cylinder - not rendering properly though. works on previous versions
+void createCylinder(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices, float radius, float height, int sides) {
+    float angleIncrement = glm::two_pi<float>() / static_cast<float>(sides);
+
+    // Top and bottom vertices
+    vertices.push_back(0.0f);  // Center of the bottom circle
+    vertices.push_back(-height / 2.0f);
+    vertices.push_back(0.0f);
+
+    vertices.push_back(0.0f);  // Center of the top circle
+    vertices.push_back(height / 2.0f);
+    vertices.push_back(0.0f);
+
+    // Vertices for the sides
+    for (int i = 0; i < sides; ++i) {
+        float x = radius * cos(angleIncrement * i);
+        float z = radius * sin(angleIncrement * i);
+
+        // Bottom circle vertices
+        vertices.push_back(x);
+        vertices.push_back(-height / 2.0f);
+        vertices.push_back(z);
+
+        // Top circle vertices
+        vertices.push_back(x);
+        vertices.push_back(height / 2.0f);
+        vertices.push_back(z);
+    }
+
+    // Indices for the sides
+    for (int i = 0; i < sides; ++i) {
+        // Side triangles
+        indices.push_back(0);                   // Center of bottom circle
+        indices.push_back(2 * i + 2);           // Next point on bottom circle
+        indices.push_back(2 * ((i + 1) % sides) + 2); // Next point on bottom circle in next segment
+
+        indices.push_back(1);                   // Center of top circle
+        indices.push_back(2 * i + 3);           // Next point on top circle in current segment
+        indices.push_back(2 * ((i + 1) % sides) + 3); // Next point on top circle in next segment
+    }
+}
+
+//function for Sphere. also doesnt render on current version.
+void createSphere(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices, float radius, int stacks, int slices) {
+    // Iterate through the stacks (vertical divisions)
+    for (int i = 0; i <= stacks; ++i) {
+        // Calculate the vertical angle (phi) for the current stack
+        float phi = glm::pi<float>() * static_cast<float>(i) / static_cast<float>(stacks);
+
+        // Iterate through the slices (horizontal divisions)
+        for (int j = 0; j <= slices; ++j) {
+            // Calculate the horizontal angle (theta) for the current slice
+            float theta = 2.0f * glm::pi<float>() * static_cast<float>(j) / static_cast<float>(slices);
+
+            // Convert spherical coordinates to Cartesian coordinates
+            float x = cos(theta) * sin(phi);
+            float y = cos(phi);
+            float z = sin(theta) * sin(phi);
+
+            // Add the Cartesian coordinates of the current vertex to the vertices vector
+            vertices.push_back(radius * x); // x coordinate
+            vertices.push_back(radius * y); // y coordinate
+            vertices.push_back(radius * z); // z coordinate
+
+            // Create triangles by connecting vertices in a winding order
+            if (i != stacks) {
+                indices.push_back((i * (slices + 1)) + j);
+                indices.push_back(((i + 1) * (slices + 1)) + j);
+                indices.push_back((i * (slices + 1)) + j + 1);
+
+                indices.push_back(((i + 1) * (slices + 1)) + j);
+                indices.push_back(((i + 1) * (slices + 1)) + j + 1);
+                indices.push_back((i * (slices + 1)) + j + 1);
+            }
+        }
+    }
+}
