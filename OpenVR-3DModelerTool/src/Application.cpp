@@ -155,16 +155,145 @@ int main() {
     layoutGrid.Push<float>(3);
     vaGrid.AddBuffer(vbGrid, layoutGrid);
 
+    GLfloat verticespyramid[] = {
+    -0.5f, 0.0f, -0.5f,
+    0.5f, 0.0f, -0.5f,
+    0.5f, 0.0f, 0.5f,
+    -0.5f, 0.0f, 0.5f,
+    0.0f, 1.0f, 0.0f
+    };
+
+    GLuint indicespyramid[] = {
+        0, 1, 4,
+        1, 2, 4,
+        2, 3, 4,
+        3, 0, 4
+    };
+    // Vertices for a unit cube centered at the origin
+    const float verticesCube[] = {
+        // Front face
+        -0.5f, -0.5f,  0.5f, // 0
+         0.5f, -0.5f,  0.5f, // 1
+         0.5f,  0.5f,  0.5f, // 2
+        -0.5f,  0.5f,  0.5f, // 3
+
+        // Back face
+        -0.5f, -0.5f, -0.5f, // 4
+         0.5f, -0.5f, -0.5f, // 5
+         0.5f,  0.5f, -0.5f, // 6
+        -0.5f,  0.5f, -0.5f, // 7
+    };
+
+    // Indices for a unit cube (using triangles)
+    const unsigned int indicesCube[] = {
+        // Front face
+        0, 1, 2,
+        2, 3, 0,
+
+        // Right face
+        1, 5, 6,
+        6, 2, 1,
+
+        // Back face
+        5, 4, 7,
+        7, 6, 5,
+
+        // Left face
+        4, 0, 3,
+        3, 7, 4,
+
+        // Bottom face
+        0, 1, 5,
+        5, 4, 0,
+
+        // Top face
+        3, 2, 6,
+        6, 7, 3
+    };
+    // Vertices for a unit 3D rectangular prism centered at the origin
+    const float verticesrec[] = {
+        // Front face
+        -1.5f, -0.5f,  0.5f, // 0: Bottom-left
+         1.5f, -0.5f,  0.5f, // 1: Bottom-right
+         1.5f,  0.5f,  0.5f, // 2: Top-right
+        -1.5f,  0.5f,  0.5f, // 3: Top-left
+
+        // Back face
+        -1.5f, -0.5f, -0.5f, // 4: Bottom-left
+         1.5f, -0.5f, -0.5f, // 5: Bottom-right
+         1.5f,  0.5f, -0.5f, // 6: Top-right
+        -1.5f,  0.5f, -0.5f  // 7: Top-left
+    };
+
+    // Indices for the rectangular prism (12 triangles, 6 faces)
+    const unsigned int indicesrec[] = {
+        // Front face
+        0, 1, 2,
+        2, 3, 0,
+
+        // Right face
+        1, 5, 6,
+        6, 2, 1,
+
+        // Back face
+        5, 4, 7,
+        7, 6, 5,
+
+        // Left face
+        4, 0, 3,
+        3, 7, 4,
+
+        // Bottom face
+        0, 1, 5,
+        5, 4, 0,
+
+        // Top face
+        3, 2, 6,
+        6, 7, 3
+    };
+    // Generating buffers for Arrays and Index buffers
+    VertexArray vapyramid;
+    VertexBuffer vbpyramid(verticespyramid, sizeof(verticespyramid));
+    VertexBufferLayout layout;
+    layout.Push<float>(3);
+    vapyramid.AddBuffer(vbpyramid, layout);
+    IndexBuffer ibpyramid(indicespyramid, sizeof(indicespyramid));
+
+    VertexArray vaCube;
+    VertexBuffer vbCube(verticesCube, sizeof(verticesCube));
+    vaCube.AddBuffer(vbCube, layout);
+    IndexBuffer ibCube(indicesCube, sizeof(indicesCube));
+
+    VertexArray varec;
+    VertexBuffer vbrec(verticesrec, sizeof(verticesrec));
+    varec.AddBuffer(vbrec, layout);
+    IndexBuffer ibrec(indicesrec, sizeof(indicesrec));
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui::StyleColorsDark;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
     glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f); 
+    glm::vec4 objectColorC = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);
+    glm::vec4 objectColorR = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);
+
     glm::mat4 m = glm::mat4(1.0f);
+    glm::mat4 m1 = glm::mat4(1.0f);
+    glm::mat4 m2 = glm::mat4(1.0f);
     // render loop
+    bool drawTriangle = false;
+    bool drawCube = false;
+    bool drawrec = false;
+    float rotateAngle = m[3][0]; // Initial rotation angle
+    float rotateAngleC = m1[3][0]; // Initial rotation angle
+    float rotateAngleR = m2[3][0]; // Initial rotation angle
+
+    float scaleValue = 1.0f; // Initial scale value
+    float scaleValueC = 1.0f; // Initial scale value
+    float scaleValueR = 1.0f; // Initial scale value
+
     while (!glfwWindowShouldClose(window)) {
         
         ImGui_ImplOpenGL3_NewFrame();
@@ -175,22 +304,6 @@ int main() {
 
         ImGui::Begin("Tool");
         ImGui::Text("Settings");
-        ImGui::ColorEdit4("Color", glm::value_ptr(objectColor)); 
-        // ImGui slider for translation in X-axis
-        ImGui::SliderFloat("Translate X", &m[3][0], -10.0f, 10.0f);
-
-        // ImGui slider for translation in Y-axis
-        ImGui::SliderFloat("Translate Y", &m[3][1], -0.50f, 10.0f);
-
-        // ImGui slider for translation in Z-axis
-        ImGui::SliderFloat("Translate Z", &m[3][2], -10.0f, 10.0f);
-
-        if (ImGui::Button("Add Vertex")) {
-            addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920 / 2) + 1.0f),  (float)(lastMouseY / (1080 / 2) + 1.0f), 0, {(unsigned int)(index_pos + 1)} }, vertices, indices);
-            index_pos++;
-        }
-
-        ImGui::End();
 
         index_pos = vertex_size - 1;
         // Use the shader program
@@ -212,14 +325,87 @@ int main() {
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         shader.SetUniformMat4f("proj", projection);
+        ImGui::Text("Draw Objects");
 
-        m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
-        shader.SetUniformMat4f("model", m);
-        shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
-        renderer.Draw(va, ib, shader);
+        ImGui::Checkbox("Draw Pyramid", &drawTriangle);
+        if (drawTriangle)
+        {
+            ImGui::ColorEdit4("Pyramid: Color", glm::value_ptr(objectColor));
+            m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
+            m = glm::rotate(m, glm::radians(rotateAngle), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
+            m = glm::scale(m, glm::vec3(scaleValue));  // Update the scale matrix
 
-        vertex_size = vertices.size() / 3;
-        total_edges += 2;
+            shader.SetUniformMat4f("model", m);
+            shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+            ImGui::SliderFloat("Pyramid: Scale", &scaleValue, 0.1f, 10.0f);
+
+            ImGui::SliderFloat("Pyramid: Rotate", &rotateAngle, -180.0f, 180.0f);
+
+            // ImGui slider for translation in X-axis
+            ImGui::SliderFloat("Pyramid: Translate X", &m[3][0], -10.0f, 20.0f);
+
+            // ImGui slider for translation in Y-axis
+            ImGui::SliderFloat("Pyramid: Translate Y", &m[3][1], -0.50f, 20.0f);
+
+            // ImGui slider for translation in Z-axis
+            ImGui::SliderFloat("Pyramid: Translate Z", &m[3][2], -10.0f, 10.0f);
+
+
+            renderer.Draw1(vapyramid, ibpyramid, shader);
+        }
+        ImGui::Checkbox("Draw Cube", &drawCube);
+        if (drawCube)
+        {
+            ImGui::ColorEdit4("Cube: Color", glm::value_ptr(objectColorC));
+            m1 = glm::translate(glm::mat4(1.0f), glm::vec3(m1[3][0], m1[3][1], m1[3][2]));  // Update the translation matrix
+            m1 = glm::rotate(m1, glm::radians(rotateAngleC), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
+            m1 = glm::scale(m1, glm::vec3(scaleValueC));  // Update the scale matrix
+
+            shader.SetUniformMat4f("model", m1);
+            shader.SetUniform4f("U_Color", objectColorC.r, objectColorC.g, objectColorC.b, objectColorC.a);
+            ImGui::SliderFloat("Cube: Scale", &scaleValueC, 0.1f, 10.0f);
+
+            ImGui::SliderFloat("Cube: Rotate", &rotateAngleC, -180.0f, 180.0f);
+            // ImGui slider for translation in X-axis
+            ImGui::SliderFloat("Cube: Translate X", &m1[3][0], -10.0f, 20.0f);
+
+            // ImGui slider for translation in Y-axis
+            ImGui::SliderFloat("Cube: Translate Y", &m1[3][1], -0.50f, 20.0f);
+
+            // ImGui slider for translation in Z-axis
+            ImGui::SliderFloat("Cube: Translate Z", &m1[3][2], -10.0f, 10.0f);
+            renderer.Draw1(vaCube, ibCube, shader);
+        }
+        ImGui::Checkbox("Draw rec", &drawrec);
+        if (drawrec)
+        {
+            ImGui::ColorEdit4("Rectangular: Color", glm::value_ptr(objectColorR));
+            m2 = glm::translate(glm::mat4(1.0f), glm::vec3(m2[3][0], m2[3][1], m2[3][2]));  // Update the translation matrix
+            m2 = glm::rotate(m2, glm::radians(rotateAngleR), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
+            m2 = glm::scale(m2, glm::vec3(scaleValueR));  // Update the scale matrix
+
+            shader.SetUniformMat4f("model", m2);
+            shader.SetUniform4f("U_Color", objectColorR.r, objectColorR.g, objectColorR.b, objectColorR.a);
+            // ImGui slider for translation in X-axis
+            ImGui::SliderFloat("Rectangular: Scale", &scaleValueR, 0.1f, 12.0f);
+
+            ImGui::SliderFloat("Rectangular: Rotate", &rotateAngleR, -180.0f, 180.0f);
+
+            ImGui::SliderFloat("Rectangular: Translate X", &m2[3][0], -10.0f, 20.0f);
+
+            // ImGui slider for translation in Y-axis
+            ImGui::SliderFloat("Rectangular: Translate Y", &m2[3][1], -0.50f, 20.0f);
+
+            // ImGui slider for translation in Z-axis
+            ImGui::SliderFloat("Rectangular: Translate Z", &m2[3][2], -10.0f, 10.0f);
+            renderer.Draw1(varec, ibrec, shader);
+        }
+
+
+        ImGui::End();
+
+       // vertex_size = vertices.size() / 3;
+      //  total_edges += 2;
 
         //grid
         glm::mat4 grid = glm::mat4(1.0f);
@@ -229,7 +415,6 @@ int main() {
         shader.SetUniformMat4f("model", grid);
         shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
         glLineWidth(5.0f);
-
         renderer.Draw(vaGrid, ibGrid, shader);
         
         ImGui::Render();
@@ -267,14 +452,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 
     // Gets the position of the vertex at the mouse position
-   if (button == GLFW_MOUSE_BUTTON_RIGHT)
+  /* if (button == GLFW_MOUSE_BUTTON_RIGHT)
     {
         glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
 
 
         addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920/2)+1.0f),  (float)(lastMouseY/(1080/2)+1.0f), 0, {(unsigned int)(index_pos + 1)}}, vertices, indices);
         index_pos++;
-    }
+    }*/
    /*if (button == GLFW_MOUSE_BUTTON_RIGHT)
    {
        double lastMouseX, lastMouseY;
