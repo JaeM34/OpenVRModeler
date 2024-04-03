@@ -1,10 +1,11 @@
-#include "Shader.h"
-#include "GLLoader.h"
-#include "VertexBuffer.h"
-#include "VertexArray.h"
-#include "IndexBuffer.h"
-#include "VertexBufferLayout.h"
-#include "Renderer.h"
+#include "OpenGL/Shader.h"
+#include "OpenGL/GLLoader.h"
+#include "OpenGL/VertexBuffer.h"
+#include "OpenGL/VertexArray.h"
+#include "OpenGL/IndexBuffer.h"
+#include "OpenGL/VertexBufferLayout.h"
+#include "OpenGL/Renderer.h"
+#include "Renderer/Camera.h"
 #include <iostream>
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
@@ -33,10 +34,11 @@ struct Vertex {
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 //camera settings
-glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float cameraSpeed = 0.05f;
+//glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
+//glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+//glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+//float cameraSpeed = 0.05f;
+Camera* camera = new Camera(0.0f, 0.0f, 0.0f);
 //cursor settings
 float yaw = -90.0f;
 float pitch = 0.0f;
@@ -64,10 +66,7 @@ void createData(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
 std::vector<GLfloat> vertices;
 std::vector<GLuint> indices;
 
-
 unsigned int index_pos;
-
-
 
 void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing);
 
@@ -205,9 +204,11 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
 
+        camera->OnRender();
+
         // View matrix: Position the camera
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        shader.SetUniformMat4f("view", view);
+        //glm::mat4 view = glm::lookAt(camera, cameraPos + cameraFront, cameraUp);
+        shader.SetUniformMat4f("view", camera->ViewMatrix());
 
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
@@ -322,7 +323,7 @@ void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
         front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         front.y = sin(glm::radians(pitch));
         front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        cameraFront = glm::normalize(front);
+        //cameraFront = glm::normalize(front);
     }
 }
 
@@ -332,16 +333,23 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
     }
     //camera interactions
-    float cameraSpeed = 0.05f;
+    //float cameraSpeed = 0.05f;
+    //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    //    cameraPos += cameraSpeed * cameraFront;
+    //if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    //    cameraPos -= cameraSpeed * cameraFront;
+    //if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    //    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    //    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+        camera->MoveForward(1.0f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        camera->MoveForward(-1.0f);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera->MoveSideways(1.0f);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
+        camera->MoveSideways(-1.0f);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         glLineWidth(5.0f);
