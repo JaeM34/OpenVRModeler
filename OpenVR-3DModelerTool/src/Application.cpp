@@ -19,6 +19,12 @@
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
 
+#include "Renderer/Model.h"
+
+#include "openvr.h"
+#include <stdlib.h>
+#include <filesystem>
+
 struct Vertex {
     unsigned int index;
     float x;
@@ -70,7 +76,115 @@ unsigned int index_pos;
 
 void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing);
 
+std::string GetTrackedDeviceString(vr::IVRSystem* pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError* peError = NULL)
+{
+    uint32_t unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
+    if (unRequiredBufferLen == 0)
+        return "";
+
+    char* pchBuffer = new char[unRequiredBufferLen];
+    unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
+    std::string sResult = pchBuffer;
+    delete[] pchBuffer;
+    return sResult;
+}
+
+struct OpenVRApplication
+{
+    vr::IVRSystem* hmd;
+    uint32_t rtWidth;
+    uint32_t rtHeight;
+
+    OpenVRApplication() :
+        hmd(NULL),
+        rtWidth(0), rtHeight(0)
+    {
+        if (!hmdIsPresent())
+        {
+            throw std::runtime_error("Error : HMD not detected on the system");
+        }
+
+        if (!vr::VR_IsRuntimeInstalled())
+        {
+            throw std::runtime_error("Error : OpenVR Runtime not detected on the system");
+        }
+
+        initVR();
+
+        if (!vr::VRCompositor())
+        {
+            throw std::runtime_error("Unable to initialize VR compositor!\n ");
+        }
+
+        hmd->GetRecommendedRenderTargetSize(&rtWidth, &rtHeight);
+
+        std::clog << "Initialized HMD with suggested render target size : " << rtWidth << "x" << rtHeight << std::endl;
+    }
+
+    /// returns if the system believes there is an HMD present without initializing all of OpenVR
+    inline static bool hmdIsPresent()
+    {
+        return vr::VR_IsHmdPresent();
+    }
+
+    virtual ~OpenVRApplication()
+    {
+        if (hmd)
+        {
+            vr::VR_Shutdown();
+            hmd = NULL;
+        }
+    }
+
+    void submitFramesOpenGL(GLint leftEyeTex, GLint rightEyeTex, bool linear = false)
+    {
+        if (!hmd)
+        {
+            throw std::runtime_error("Error : presenting frames when VR system handle is NULL");
+        }
+
+        vr::TrackedDevicePose_t trackedDevicePose[vr::k_unMaxTrackedDeviceCount];
+        vr::VRCompositor()->WaitGetPoses(trackedDevicePose, vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+
+        ///\todo the documentation on this is completely unclear.  I have no idea which one is correct...
+        /// seems to imply that we always want Gamma in opengl because linear is for framebuffers that have been
+        /// processed by DXGI...
+        vr::EColorSpace colorSpace = linear ? vr::ColorSpace_Linear : vr::ColorSpace_Gamma;
+
+        vr::Texture_t leftEyeTexture = { (void*)leftEyeTex, vr::TextureType_OpenGL, colorSpace };
+        vr::Texture_t rightEyeTexture = { (void*)rightEyeTex, vr::TextureType_OpenGL, colorSpace };
+
+        vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
+        vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
+
+        vr::VRCompositor()->PostPresentHandoff();
+    }
+
+    void handleVRError(vr::EVRInitError err)
+    {
+        throw std::runtime_error(vr::VR_GetVRInitErrorAsEnglishDescription(err));
+    }
+
+    void initVR()
+    {
+        vr::EVRInitError err = vr::VRInitError_None;
+        hmd = vr::VR_Init(&err, vr::VRApplication_Scene);
+
+        if (err != vr::VRInitError_None)
+        {
+            handleVRError(err);
+        }
+
+        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String) << std::endl;
+        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
+
+    }
+};
+
 int main() {
+
+    //OpenVRApplication *openVR = new OpenVRApplication();
+
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -81,6 +195,8 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    //OpenVRApplication vrApp;
 
     // Create a GLFW window
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "VR Tool", NULL, NULL);
@@ -293,6 +409,10 @@ int main() {
     float scaleValueC = 1.0f; // Initial scale value
     float scaleValueR = 1.0f; // Initial scale value
 
+    std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj");
+
+    Model model(str, false);
+
     while (!glfwWindowShouldClose(window)) {
         
         ImGui_ImplOpenGL3_NewFrame();
@@ -401,6 +521,9 @@ int main() {
             ImGui::SliderFloat("Rectangular: Translate Z", &m2[3][2], -10.0f, 10.0f);
             renderer.Draw1(varec, ibrec, shader);
         }
+
+
+        model.Draw(shader);
         
         if (ImGui::Button("Close Application")) {
             //Action to close the application
@@ -533,13 +656,13 @@ void processInput(GLFWwindow* window) {
     //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     //    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera->MoveForward(1.0f);
+        camera->MoveForward(0.05f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera->MoveForward(-1.0f);
+        camera->MoveForward(-0.05f);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera->MoveSideways(1.0f);
+        camera->MoveSideways(-0.05f);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera->MoveSideways(-1.0f);
+        camera->MoveSideways(0.05f);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         glLineWidth(5.0f);

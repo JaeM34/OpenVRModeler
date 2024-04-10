@@ -20,7 +20,7 @@ Camera::Camera(const glm::vec3& position, const glm::vec3& up, const glm::vec3& 
 }
 
 void Camera::OnRender() {
-	m_ViewMatrix = glm::lookAt(m_Position, m_View + m_Rotation, m_Up);
+	m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_View, m_Up);
 }
 
 void Camera::Rotate(float angle, float x, float y, float z)
@@ -71,6 +71,6 @@ void Camera::MoveUpwards(float distance)
 
 void Camera::MoveSideways(float distance)
 {
-	m_Position = m_Position + (m_Right * distance);
+	m_Position = m_Position + glm::normalize(glm::cross(m_View, m_Up)) * distance;
 }
 

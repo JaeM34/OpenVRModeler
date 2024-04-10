@@ -1,9 +1,20 @@
 ﻿  Application.cpp
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(119,47): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(199,39): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(248,16): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(249,18): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(314,19): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(328,9): warning C4101: 'remove_index': unreferenced local variable
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.39.33519\include\filesystem(12): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(154,42): warning C4312: 'type cast': conversion from 'GLint' to 'void *' of greater size
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(155,43): warning C4312: 'type cast': conversion from 'GLint' to 'void *' of greater size
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(241,47): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(266,58): warning C4267: 'argument': conversion from 'size_t' to 'unsigned int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(267,57): warning C4267: 'argument': conversion from 'size_t' to 'unsigned int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(389,12): warning C4551: function call missing argument list
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(567,16): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(629,16): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(630,18): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(702,19): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(751,32): warning C4018: '<': signed/unsigned mismatch
+C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\OpenVR-3DModelerTool\src\Application.cpp(752,36): warning C4018: '<': signed/unsigned mismatch
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   OpenVR-3DModelerTool.vcxproj -> C:\Users\deft\Documents\Classes\Comp490\OpenVR-3DModelerTool\x64\Debug\OpenVR-3DModelerTool.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  0 File(s) copied
+  0 File(s) copied
