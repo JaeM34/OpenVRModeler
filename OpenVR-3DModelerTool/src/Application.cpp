@@ -24,6 +24,7 @@
 #include "openvr.h"
 #include <stdlib.h>
 #include <filesystem>
+#include "Renderer/Scene.h"
 
 struct Vertex {
     unsigned int index;
@@ -33,9 +34,6 @@ struct Vertex {
 
     std::vector<unsigned int> edges;
 };
-
-
-
 // window settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
@@ -44,7 +42,7 @@ const unsigned int SCR_HEIGHT = 1080;
 //glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 //glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 //float cameraSpeed = 0.05f;
-Camera* camera = new Camera(0.0f, 0.0f, 0.0f);
+Camera camera(0.0f, 0.0f, 0.0f);
 //cursor settings
 float yaw = -90.0f;
 float pitch = 0.0f;
@@ -76,113 +74,7 @@ unsigned int index_pos;
 
 void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing);
 
-std::string GetTrackedDeviceString(vr::IVRSystem* pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError* peError = NULL)
-{
-    uint32_t unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
-    if (unRequiredBufferLen == 0)
-        return "";
-
-    char* pchBuffer = new char[unRequiredBufferLen];
-    unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
-    std::string sResult = pchBuffer;
-    delete[] pchBuffer;
-    return sResult;
-}
-
-struct OpenVRApplication
-{
-    vr::IVRSystem* hmd;
-    uint32_t rtWidth;
-    uint32_t rtHeight;
-
-    OpenVRApplication() :
-        hmd(NULL),
-        rtWidth(0), rtHeight(0)
-    {
-        if (!hmdIsPresent())
-        {
-            throw std::runtime_error("Error : HMD not detected on the system");
-        }
-
-        if (!vr::VR_IsRuntimeInstalled())
-        {
-            throw std::runtime_error("Error : OpenVR Runtime not detected on the system");
-        }
-
-        initVR();
-
-        if (!vr::VRCompositor())
-        {
-            throw std::runtime_error("Unable to initialize VR compositor!\n ");
-        }
-
-        hmd->GetRecommendedRenderTargetSize(&rtWidth, &rtHeight);
-
-        std::clog << "Initialized HMD with suggested render target size : " << rtWidth << "x" << rtHeight << std::endl;
-    }
-
-    /// returns if the system believes there is an HMD present without initializing all of OpenVR
-    inline static bool hmdIsPresent()
-    {
-        return vr::VR_IsHmdPresent();
-    }
-
-    virtual ~OpenVRApplication()
-    {
-        if (hmd)
-        {
-            vr::VR_Shutdown();
-            hmd = NULL;
-        }
-    }
-
-    void submitFramesOpenGL(GLint leftEyeTex, GLint rightEyeTex, bool linear = false)
-    {
-        if (!hmd)
-        {
-            throw std::runtime_error("Error : presenting frames when VR system handle is NULL");
-        }
-
-        vr::TrackedDevicePose_t trackedDevicePose[vr::k_unMaxTrackedDeviceCount];
-        vr::VRCompositor()->WaitGetPoses(trackedDevicePose, vr::k_unMaxTrackedDeviceCount, nullptr, 0);
-
-        ///\todo the documentation on this is completely unclear.  I have no idea which one is correct...
-        /// seems to imply that we always want Gamma in opengl because linear is for framebuffers that have been
-        /// processed by DXGI...
-        vr::EColorSpace colorSpace = linear ? vr::ColorSpace_Linear : vr::ColorSpace_Gamma;
-
-        vr::Texture_t leftEyeTexture = { (void*)leftEyeTex, vr::TextureType_OpenGL, colorSpace };
-        vr::Texture_t rightEyeTexture = { (void*)rightEyeTex, vr::TextureType_OpenGL, colorSpace };
-
-        vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
-        vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
-
-        vr::VRCompositor()->PostPresentHandoff();
-    }
-
-    void handleVRError(vr::EVRInitError err)
-    {
-        throw std::runtime_error(vr::VR_GetVRInitErrorAsEnglishDescription(err));
-    }
-
-    void initVR()
-    {
-        vr::EVRInitError err = vr::VRInitError_None;
-        hmd = vr::VR_Init(&err, vr::VRApplication_Scene);
-
-        if (err != vr::VRInitError_None)
-        {
-            handleVRError(err);
-        }
-
-        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String) << std::endl;
-        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
-
-    }
-};
-
-int main() {
-
+int main() {    
     //OpenVRApplication *openVR = new OpenVRApplication();
 
     // Initialize GLFW
@@ -218,34 +110,6 @@ int main() {
     Shader shader("shaders/Base.shader");
     shader.Bind();
                                      
-    verticese.push_back({0,  -0.5f,  0.0f, -0.5f, {1, 4}});
-    verticese.push_back({1,   0.5f,  0.0f, -0.5f, {2, 4}});
-    verticese.push_back({2,   0.5f,  0.0f,  0.5f, {3, 4}});
-    verticese.push_back({3,  -0.5f,  0.0f,  0.5f, {0, 4}});
-                                     
-    verticese.push_back({4,   0.0f,  1.0f,  0.0f, {}});
-                                     
-    verticese.push_back({5,  -0.5f,  2.0f, -0.5f, {6, 8, 4} });
-    verticese.push_back({6,   0.5f,  2.0f, -0.5f, {7, 4} });
-    verticese.push_back({7,   0.5f,  2.0f,  0.5f, {8, 4} });
-    verticese.push_back({8,  -0.5f,  2.0f,  0.5f, {4  } });
-
-    verticese.push_back({9,   -0.5f, 0.5f, -1.0f, {10, 4} });
-    verticese.push_back({10,   0.5f, 0.5f, -0.5f, {11, 4} });
-    verticese.push_back({11,   0.5f, 1.5f,  0.5f, {12, 4} });
-    verticese.push_back({12,  -0.5f, 1.5f,  1.0f, { 9, 4} });
-
-    total_edges = 0;
-    int i;
-    for (i = 0; i < vertex_size; i++) {
-        total_edges += verticese[i].edges.size();
-    }
-
-    for (Vertex v : verticese)
-    {
-        addVertex(v, vertices, indices);
-    }
-
     Renderer renderer;
     // Use the shader program
     // Enable depth testing
@@ -255,20 +119,6 @@ int main() {
     glfwSetCursorPosCallback(window, cursor_pos_callback);
     // Set up mouse button callback function
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-
-    unsigned int gridSizeX = 450; // Number of squares along the X-axis
-    unsigned int gridSizeZ = 250; // Number of squares along the Z-axis
-    float gridSpacing = 1.0f;    // Spacing between grid squares
-
-    std::vector<GLfloat> gridVertices;
-    std::vector<GLuint> gridIndices;
-    createGridData(gridVertices, gridIndices, gridSizeX, gridSizeZ, gridSpacing);
-    VertexBuffer vbGrid(&gridVertices[0], sizeof(GLfloat)* gridVertices.size());
-    IndexBuffer ibGrid(&gridIndices[0], gridIndices.size());
-    VertexArray vaGrid;
-    VertexBufferLayout layoutGrid;
-    layoutGrid.Push<float>(3);
-    vaGrid.AddBuffer(vbGrid, layoutGrid);
 
     GLfloat verticespyramid[] = {
     -0.5f, 0.0f, -0.5f,
@@ -366,6 +216,13 @@ int main() {
         3, 2, 6,
         6, 7, 3
     };
+
+    // CREATION OF FRAME BUFFER
+    //unsigned int fbo;
+    //glGenFramebuffers(1, &fbo);
+    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+
     // Generating buffers for Arrays and Index buffers
     VertexArray vapyramid;
     VertexBuffer vbpyramid(verticespyramid, sizeof(verticespyramid));
@@ -408,21 +265,59 @@ int main() {
     float scaleValue = 1.0f; // Initial scale value
     float scaleValueC = 1.0f; // Initial scale value
     float scaleValueR = 1.0f; // Initial scale value
+    //std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj");
+    //std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx");
+    //
+    //Model model(string("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj"), false);
+    //Model model(string("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx"), false);
 
-    std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj");
+    std::vector<Model> models;
+    std::vector<Mesh> meshes;
+    std::vector<Material> materials;
+    models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj", false));
+    models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx", false));
+    
 
-    Model model(str, false);
+    Scene scene(models, meshes, materials, camera, shader);
+    scene.draw();
+
+    //unsigned int fbo;
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     while (!glfwWindowShouldClose(window)) {
-        
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         processInput(window);
-
+        
         ImGui::Begin("Tool");
         ImGui::Text("Settings");
+        ImGui::Text("Draw Objects");
+
+        //index_pos = vertex_size - 1;
+        scene.Render();
+        scene.draw();
+
+        if (ImGui::Button("Close Application")) {
+            //Action to close the application
+            return 0;
+        }
+        ImGui::End();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+
+    }
+    /*
+    while (!glfwWindowShouldClose(window)) {
+        
+
+
+        processInput(window);
+
 
         index_pos = vertex_size - 1;
         // Use the shader program
@@ -437,12 +332,11 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
 
-        camera->OnRender();
+        camera.OnRender();
 
         // View matrix: Position the camera
         //glm::mat4 view = glm::lookAt(camera, cameraPos + cameraFront, cameraUp);
-        shader.SetUniformMat4f("view", camera->ViewMatrix());
-
+        shader.SetUniformMat4f("view", camera.ViewMatrix());
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         shader.SetUniformMat4f("proj", projection);
@@ -523,7 +417,9 @@ int main() {
         }
 
 
-        model.Draw(shader);
+        //model.Draw(shader);
+        //scene.draw();
+     
         
         if (ImGui::Button("Close Application")) {
             //Action to close the application
@@ -544,7 +440,7 @@ int main() {
         shader.SetUniformMat4f("model", grid);
         shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
         glLineWidth(5.0f);
-        renderer.Draw(vaGrid, ibGrid, shader);
+        //renderer.Draw(vaGrid, ibGrid, shader);
         
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -553,6 +449,7 @@ int main() {
 
         glfwPollEvents();
     }
+    */
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -632,11 +529,7 @@ void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
         if (pitch > 89.0f) pitch = 89.0f;
         if (pitch < -89.0f) pitch = -89.0f;
 
-        glm::vec3 front;
-        front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        front.y = sin(glm::radians(pitch));
-        front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        //cameraFront = glm::normalize(front);
+        camera.Rotate(yaw, pitch);
     }
 }
 
@@ -656,13 +549,13 @@ void processInput(GLFWwindow* window) {
     //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     //    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera->MoveForward(0.05f);
+        camera.MoveForward(0.05f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera->MoveForward(-0.05f);
+        camera.MoveForward(-0.05f);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera->MoveSideways(-0.05f);
+        camera.MoveSideways(-0.05f);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera->MoveSideways(0.05f);
+        camera.MoveSideways(0.05f);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         glLineWidth(5.0f);

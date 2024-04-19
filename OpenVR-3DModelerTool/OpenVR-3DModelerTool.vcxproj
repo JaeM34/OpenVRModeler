@@ -177,6 +177,7 @@ xcopy /y /d "$(SolutionDir)Dependencies\assimp\bin" "$(OutDir)"</Command>
     <ClInclude Include="..\Dependencies\imGui\imstb_truetype.h" />
     <ClInclude Include="src\OpenGL\GLLoader.h" />
     <ClInclude Include="src\OpenGL\IndexBuffer.h" />
+    <ClInclude Include="src\Renderer\Material.h" />
     <ClInclude Include="src\Renderer\Mesh.h" />
     <ClInclude Include="src\OpenGL\Renderer.h" />
     <ClInclude Include="src\Renderer\Camera.h" />

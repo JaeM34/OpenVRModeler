@@ -1,3 +1,5 @@
+#ifndef CAMERA_H
+#define CAMERA_H
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/rotate_vector.hpp"
@@ -14,11 +16,11 @@ public:
 
     void OnRender();
 
-    void Rotate(float angle, float x, float y, float z);
-    void Rotate(glm::quat &q);
-    void RotateX(float radians);
-    void RotateY(float radians);
-    void RotateZ(float radians);
+    void Rotate(float yaw, float pitch);
+    //void Rotate(glm::quat &q);
+    //void RotateX(float radians);
+    //void RotateY(float radians);
+    //void RotateZ(float radians);
     void Transform(float x, float y, float z);
 
     void MoveForward(float distance);
@@ -52,6 +54,14 @@ public:
         m_View.z = z;
     }
 
+    void SetFov(float fov) {
+        m_fov = fov;
+    }
+
+    float GetFov() {
+        return m_fov;
+    }
+
 private:
     // Position
     glm::vec3 m_Position;
@@ -64,5 +74,12 @@ private:
     glm::vec3 m_View;
 
     // Rotation
+    float yaw;
+    float pitch;
     glm::vec3 m_Rotation;
+
+    // Settings
+    float m_fov;
 };
+
+#endif
