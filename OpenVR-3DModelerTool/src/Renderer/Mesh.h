@@ -94,6 +94,40 @@ public:
         glActiveTexture(GL_TEXTURE0);
     }
 
+    // Scale
+    void scale(float scale) {
+
+    }
+
+    // Rotate
+    void Rotate(float radians) {
+
+    }
+
+    // Transform
+    void Forward(float distance) {
+        //for (Vertex &v : vertices) {
+        //    //printf("%f", v.Position.x);
+        //    v.Position.x += distance;
+        //}
+    }
+
+    void Strafe(float distance) {
+        for (Vertex &v : vertices) {
+            v.Position.z += distance;
+        }
+    }
+
+    void Upwards(float distance) {
+        for (Vertex &v : vertices) {
+            v.Position.y += distance;
+        }
+    }
+
+    void Position(glm::vec3 position) {
+
+    }
+
 private:
     // render data 
     unsigned int VBO, EBO;

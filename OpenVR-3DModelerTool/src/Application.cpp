@@ -38,10 +38,6 @@ struct Vertex {
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 //camera settings
-//glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
-//glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-//glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-//float cameraSpeed = 0.05f;
 Camera camera(0.0f, 0.0f, 0.0f);
 //cursor settings
 float yaw = -90.0f;
@@ -64,18 +60,122 @@ void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
-void removeVertex(unsigned int index);
-void createData(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
 
 std::vector<GLfloat> vertices;
 std::vector<GLuint> indices;
 
-unsigned int index_pos;
+//unsigned int index_pos;
 
-void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing);
+/*
+std::string GetTrackedDeviceString(vr::IVRSystem* pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError* peError = NULL)
+{
+    uint32_t unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
+    if (unRequiredBufferLen == 0)
+        return "";
+
+    char* pchBuffer = new char[unRequiredBufferLen];
+    unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
+    std::string sResult = pchBuffer;
+    delete[] pchBuffer;
+    return sResult;
+}
+*/
+/*
+struct OpenVRApplication
+{
+    vr::IVRSystem* hmd;
+    uint32_t rtWidth;
+    uint32_t rtHeight;
+
+    OpenVRApplication() :
+        hmd(NULL),
+        rtWidth(0), rtHeight(0)
+    {
+        if (!hmdIsPresent())
+        {
+            throw std::runtime_error("Error : HMD not detected on the system");
+        }
+
+        if (!vr::VR_IsRuntimeInstalled())
+        {
+            throw std::runtime_error("Error : OpenVR Runtime not detected on the system");
+        }
+
+        initVR();
+
+        if (!vr::VRCompositor())
+        {
+            throw std::runtime_error("Unable to initialize VR compositor!\n ");
+        }
+
+        hmd->GetRecommendedRenderTargetSize(&rtWidth, &rtHeight);
+
+        std::clog << "Initialized HMD with suggested render target size : " << rtWidth << "x" << rtHeight << std::endl;
+    }
+
+    /// returns if the system believes there is an HMD present without initializing all of OpenVR
+    inline static bool hmdIsPresent()
+    {
+        return vr::VR_IsHmdPresent();
+    }
+
+    virtual ~OpenVRApplication()
+    {
+        if (hmd)
+        {
+            vr::VR_Shutdown();
+            hmd = NULL;
+        }
+    }
+
+    void submitFramesOpenGL(GLint leftEyeTex, GLint rightEyeTex, bool linear = false)
+    {
+        if (!hmd)
+        {
+            throw std::runtime_error("Error : presenting frames when VR system handle is NULL");
+        }
+
+        vr::TrackedDevicePose_t trackedDevicePose[vr::k_unMaxTrackedDeviceCount];
+        vr::VRCompositor()->WaitGetPoses(trackedDevicePose, vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+
+        ///\todo the documentation on this is completely unclear.  I have no idea which one is correct...
+        /// seems to imply that we always want Gamma in opengl because linear is for framebuffers that have been
+        /// processed by DXGI...
+        vr::EColorSpace colorSpace = linear ? vr::ColorSpace_Linear : vr::ColorSpace_Gamma;
+
+        vr::Texture_t leftEyeTexture = { (void*)leftEyeTex, vr::TextureType_OpenGL, colorSpace };
+        vr::Texture_t rightEyeTexture = { (void*)rightEyeTex, vr::TextureType_OpenGL, colorSpace };
+
+        vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
+        vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
+
+        vr::VRCompositor()->PostPresentHandoff();
+    }
+
+    void handleVRError(vr::EVRInitError err)
+    {
+        throw std::runtime_error(vr::VR_GetVRInitErrorAsEnglishDescription(err));
+    }
+
+    void initVR()
+    {
+        vr::EVRInitError err = vr::VRInitError_None;
+        hmd = vr::VR_Init(&err, vr::VRApplication_Scene);
+
+        if (err != vr::VRInitError_None)
+        {
+            handleVRError(err);
+        }
+
+        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String) << std::endl;
+        std::clog << GetTrackedDeviceString(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
+
+    }
+};
+*/
 
 int main() {    
-    //OpenVRApplication *openVR = new OpenVRApplication();
+    //OpenVRApplication openVR;
 
     // Initialize GLFW
     if (!glfwInit()) {
@@ -265,24 +365,16 @@ int main() {
     float scaleValue = 1.0f; // Initial scale value
     float scaleValueC = 1.0f; // Initial scale value
     float scaleValueR = 1.0f; // Initial scale value
-    //std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj");
-    //std::string str("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx");
-    //
-    //Model model(string("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj"), false);
-    //Model model(string("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx"), false);
+
 
     std::vector<Model> models;
     std::vector<Mesh> meshes;
     std::vector<Material> materials;
     models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj", false));
     models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx", false));
-    
 
     Scene scene(models, meshes, materials, camera, shader);
     scene.draw();
-
-    //unsigned int fbo;
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
@@ -296,8 +388,22 @@ int main() {
         ImGui::Text("Draw Objects");
 
         //index_pos = vertex_size - 1;
-        scene.Render();
+        //scene.draw();
+        
+        for (Model &m : scene.models) {
+            m.Scale(1.0005f);
+            m.RotateX(1.0f);
+            m.RotateY(1.0f);
+            m.RotateZ(1.0f);
+            m.Forward(0.05f);
+            m.Strafe(0.05f);
+            m.Upwards(0.05f);
+        }
+
         scene.draw();
+        scene.RenderFrame();
+        scene.Render();
+        //scene.draw();
 
         if (ImGui::Button("Close Application")) {
             //Action to close the application
@@ -476,41 +582,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             isMousePressed = false;
         }
     }
-
-    // Gets the position of the vertex at the mouse position
-  /* if (button == GLFW_MOUSE_BUTTON_RIGHT)
-    {
-        glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
-
-
-        addVertex({ (unsigned int)index_pos, (float)(lastMouseX / (1920/2)+1.0f),  (float)(lastMouseY/(1080/2)+1.0f), 0, {(unsigned int)(index_pos + 1)}}, vertices, indices);
-        index_pos++;
-    }*/
-   /*if (button == GLFW_MOUSE_BUTTON_RIGHT)
-   {
-       double lastMouseX, lastMouseY;
-       glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
-
-       float closestDistance = std::numeric_limits<float>::max();
-       unsigned int closestVertexIndex = 0;
-
-       for (const Vertex& vertex : verticese) {
-           float distance = calculateDistance(
-               lastMouseX, lastMouseY,
-
-               vertex.x, vertex.y
-
-           );
-
-           if (distance < closestDistance) {
-               closestDistance = distance;
-               closestVertexIndex = vertex.index;
-           }
-       }
-
-       removeVertex(closestVertexIndex);
-   }
-   */
 }
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     if (isMousePressed) {
@@ -533,21 +604,12 @@ void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     }
 }
 
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
-    //camera interactions
-    //float cameraSpeed = 0.05f;
-    //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    //    cameraPos += cameraSpeed * cameraFront;
-    //if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    //    cameraPos -= cameraSpeed * cameraFront;
-    //if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    //    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    //    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.MoveForward(0.05f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -601,79 +663,6 @@ void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& in
         std::cout << v.edges[i] << ", ";
     }
     std::cout << std::endl;
-}
-
-/*
-void removeVertex(unsigned int index) {
-    std::cout << "Trying to remove vertex with index: " << index << std::endl; 
-
-    auto it = std::find_if(verticese.begin(), verticese.end(), [index](const Vertex& v) {
-        return v.index == index;
-
-        });
-
-    if (it != verticese.end()) {
-        std::cout << "Removing Vertex: " << it->index << std::endl;
-
-        verticese.erase(it);
-
-        for (auto& vertex : verticese) {
-            auto& edges = vertex.edges;
-            edges.erase(std::remove(edges.begin(), edges.end(), index), edges.end());
-        }
-
-        vertices.clear();
-        indices.clear();
-
-        for (Vertex v : verticese) {
-            addVertex(v, vertices, indices);
-        }
-    }
-
-    else {
-        std::cerr << "Vertex with index " << index << " not found! " << std::endl;
-
-    }
-
-}
-void createData(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices)
-{
-}*/
-// function to create grid
-void createGridData(std::vector<GLfloat>& gridVertices, std::vector<GLuint>& gridIndices, int gridSizeX, int gridSizeZ, float gridSpacing) {
-    for (unsigned int i = 0; i < gridSizeX; ++i) {
-        for (unsigned int j = 0; j < gridSizeZ; ++j) {
-            float x = i * gridSpacing;
-            float y = 0.0f;
-            float z = j * gridSpacing;
-
-            // Add vertices for each corner of the square
-            gridVertices.push_back(x);
-            gridVertices.push_back(y);
-            gridVertices.push_back(z);
-
-            gridVertices.push_back(x + gridSpacing);
-            gridVertices.push_back(y);
-            gridVertices.push_back(z);
-
-            gridVertices.push_back(x + gridSpacing);
-            gridVertices.push_back(y);
-            gridVertices.push_back(z + gridSpacing);
-
-            gridVertices.push_back(x);
-            gridVertices.push_back(y);
-            gridVertices.push_back(z + gridSpacing);
-
-            // Add indices for the square
-            GLuint baseIndex = static_cast<GLuint>(gridVertices.size() / 3) - 4;
-            gridIndices.push_back(baseIndex);
-            gridIndices.push_back(baseIndex + 1);
-            gridIndices.push_back(baseIndex + 2);
-            gridIndices.push_back(baseIndex + 2);
-            gridIndices.push_back(baseIndex + 3);
-            gridIndices.push_back(baseIndex);
-        }
-    }
 }
 
 //function for creating cylinder - not rendering properly though. works on previous versions

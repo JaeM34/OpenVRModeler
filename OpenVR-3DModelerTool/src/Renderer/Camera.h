@@ -7,6 +7,25 @@
 
 class Camera {
 public:
+
+    // Position
+    glm::vec3 m_Position;
+    glm::mat4 m_ViewMatrix;
+    glm::mat4 m_ProjectionMatrix;
+
+    // Orientation
+    glm::vec3 m_Up;
+    glm::vec3 m_Right;
+    glm::vec3 m_View;
+
+    // Rotation
+    float yaw;
+    float pitch;
+    glm::vec3 m_Rotation;
+
+    // Settings
+    float m_fov;
+
     Camera(float x, float y, float z);
 
     Camera(const glm::vec3& position,
@@ -63,23 +82,7 @@ public:
     }
 
 private:
-    // Position
-    glm::vec3 m_Position;
-    glm::mat4 m_ViewMatrix;
-    glm::mat4 m_ProjectionMatrix;
 
-    // Orientation
-    glm::vec3 m_Up;
-    glm::vec3 m_Right;
-    glm::vec3 m_View;
-
-    // Rotation
-    float yaw;
-    float pitch;
-    glm::vec3 m_Rotation;
-
-    // Settings
-    float m_fov;
 };
 
 #endif

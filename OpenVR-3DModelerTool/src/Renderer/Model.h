@@ -34,6 +34,8 @@ public:
     vector<Mesh> meshes;
     string directory;
     bool gammaCorrection;
+    glm::mat4 m = glm::mat4(1.0f);      // Matrix for transformation
+    glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);     // Object Colors
 
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, bool gamma = false) : gammaCorrection(gamma)
@@ -44,8 +46,49 @@ public:
     // draws the model, and thus all its meshes
     void Draw(Shader& shader)
     {
+        shader.SetUniformMat4f("model", m);
+        shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
+    }
+
+    // Scale
+    void Scale(float scale) {
+        m = glm::scale(m, glm::vec3(scale));  // Update the scale matrix
+    }
+
+    // Rotate
+    void RotateX(float angles) {
+        m = glm::rotate(m, glm::radians(angles), glm::vec3(1.0f, 0.0f, 0.0f));  // Update the rotation matrix
+    }
+
+    // Rotate
+    void RotateY(float angles) {
+        m = glm::rotate(m, glm::radians(angles), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
+    }
+
+    // Rotate
+    void RotateZ(float angles) {
+        m = glm::rotate(m, glm::radians(angles), glm::vec3(0.0f, 0.0f, 1.0f));  // Update the rotation matrix
+    }
+
+    // Transforms
+    void Forward(float distance) {
+        //m[3][2] += distance;
+        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
+        m = glm::translate(m, glm::vec3(0.0f, 0.0f, distance / 10));
+    }
+
+    void Strafe(float distance) {
+        //m[3][0] += distance;
+        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], distance, m[3][2]));  // Update the translation matrix
+        m = glm::translate(m, glm::vec3(distance / 10, 0.0f, 0.0f));
+    }
+
+    void Upwards(float distance) {
+        //m[3][1] += distance;
+        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], distance));  // Update the translation matrix
+        m = glm::translate(m, glm::vec3(0.0f, distance / 10, 0.0f));
     }
 
 private:
@@ -245,4 +288,5 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 
     return textureID;
 }
+
 #endif
