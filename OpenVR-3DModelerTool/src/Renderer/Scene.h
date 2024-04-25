@@ -135,16 +135,12 @@ public:
         // View matrix: Position the camera
         //m_shader.SetUniformMat4f("view", camera.ViewMatrix());
         // View matrix: Position the camera
-        glm::mat4 viewMatrix;
-        GetHeadsetPose(viewMatrix);
-        ///m_shader.SetUniformMat4f("view", GetViewMatrix(nEye));
-        m_shader.SetUniformMat4f("view", viewMatrix);
+        m_shader.SetUniformMat4f("view", GetViewMatrix(nEye));
 
         // Get the view matrix from OpenVR
 
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(camera.GetFov()), float(m_nRenderWidth / m_nRenderWidth), m_fNearClip, m_fFarClip);
-        glm::mat4 viewProjectionMatrix = projection * viewMatrix;
         m_shader.SetUniformMat4f("proj", projection);
 
         // Grid
@@ -356,27 +352,6 @@ private:
 
     float m_fNearClip = 0.1f;
     float m_fFarClip = 30.0f;
-
-    // Function to retrieve the headset pose from OpenVR
-    void GetHeadsetPose(glm::mat4& viewMatrix) {
-        // Retrieve the pose from OpenVR
-        vr::TrackedDevicePose_t trackedDevicePose;
-        vr::VRCompositor()->WaitGetPoses(&trackedDevicePose, 1, nullptr, 0);
-
-        // Extract position and orientation
-        if (trackedDevicePose.bPoseIsValid) {
-            glm::mat4 poseMatrix = glm::make_mat4(&trackedDevicePose.mDeviceToAbsoluteTracking.m[0][0]);
-            glm::mat4 poseMatrixInverse = glm::inverse(poseMatrix); // Inverse of the pose matrix
-
-            // Extract rotation and position
-            glm::mat3 rotationMatrix = glm::mat3(poseMatrixInverse); // Extract rotation
-            glm::vec3 position = glm::vec3(poseMatrixInverse[3]); // Extract position
-
-            // Create the view matrix
-            viewMatrix = glm::mat4(rotationMatrix); // Rotation part
-            viewMatrix[3] = glm::vec4(-position * rotationMatrix, 1.0f); // Translation part
-        }
-    }
 
     glm::mat4 GetHMDMatrixProjectionEye(vr::Hmd_Eye nEye)
     {
