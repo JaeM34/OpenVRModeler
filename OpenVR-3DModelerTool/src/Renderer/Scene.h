@@ -135,13 +135,13 @@ public:
         // View matrix: Position the camera
         //m_shader.SetUniformMat4f("view", camera.ViewMatrix());
         // View matrix: Position the camera
-        m_shader.SetUniformMat4f("view", GetViewMatrix(nEye));
+        //m_shader.SetUniformMat4f("view", GetViewMatrix(nEye));
 
         // Get the view matrix from OpenVR
 
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(camera.GetFov()), float(m_nRenderWidth / m_nRenderWidth), m_fNearClip, m_fFarClip);
-        m_shader.SetUniformMat4f("proj", projection);
+        m_shader.SetUniformMat4f("proj", GetCurrentViewProjectionMatrix(nEye));
 
         // Grid
         glm::mat4 grid = glm::mat4(1.0f);
@@ -256,44 +256,6 @@ private:
     char m_rDevClassChar[vr::k_unMaxTrackedDeviceCount];
     glm::mat4 m_mat4HMDPose;
 
-    void UpdateHMDMatrixPose()
-    {
-        if (!m_pHMD)
-            return;
-
-        vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
-
-        m_iValidPoseCount = 0;
-        m_strPoseClasses = "";
-        for (int nDevice = 0; nDevice < vr::k_unMaxTrackedDeviceCount; ++nDevice)
-        {
-            if (m_rTrackedDevicePose[nDevice].bPoseIsValid)
-            {
-                m_iValidPoseCount++;
-                m_rmat4DevicePose[nDevice] = ConvertSteamVRMatrixToMatrix4(m_rTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking);
-                if (m_rDevClassChar[nDevice] == 0)
-                {
-                    switch (m_pHMD->GetTrackedDeviceClass(nDevice))
-                    {
-                    case vr::TrackedDeviceClass_Controller:        m_rDevClassChar[nDevice] = 'C'; break;
-                    case vr::TrackedDeviceClass_HMD:               m_rDevClassChar[nDevice] = 'H'; break;
-                    case vr::TrackedDeviceClass_Invalid:           m_rDevClassChar[nDevice] = 'I'; break;
-                    case vr::TrackedDeviceClass_GenericTracker:    m_rDevClassChar[nDevice] = 'G'; break;
-                    case vr::TrackedDeviceClass_TrackingReference: m_rDevClassChar[nDevice] = 'T'; break;
-                    default:                                       m_rDevClassChar[nDevice] = '?'; break;
-                    }
-                }
-                m_strPoseClasses += m_rDevClassChar[nDevice];
-            }
-        }
-
-        if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
-        {
-            m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
-            m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
-        }
-    }
-
     glm::mat4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t& matPose)
     {
         glm::mat4 matrixObj(
@@ -342,6 +304,21 @@ private:
         return true;
     }
 
+    glm::mat4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye)
+    {
+        glm::mat4 matMVP;
+        if (nEye == vr::Eye_Left)
+        {
+            matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft * m_mat4HMDPose;
+        }
+        else if (nEye == vr::Eye_Right)
+        {
+            matMVP = m_mat4ProjectionRight * m_mat4eyePosRight * m_mat4HMDPose;
+        }
+
+        return matMVP;
+    }
+
     void SetupCameras()
     {
         m_mat4ProjectionLeft = GetHMDMatrixProjectionEye(vr::Eye_Left);
@@ -381,19 +358,42 @@ private:
         //return matrixObj;
     }
 
-    glm::mat4 GetCurrentViewProjectionMatrix(vr::Hmd_Eye nEye)
+    void UpdateHMDMatrixPose()
     {
-        glm::mat4 matMVP;
-        if (nEye == vr::Eye_Left)
+        if (!m_pHMD)
+            return;
+
+        vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+
+        m_iValidPoseCount = 0;
+        m_strPoseClasses = "";
+        for (int nDevice = 0; nDevice < vr::k_unMaxTrackedDeviceCount; ++nDevice)
         {
-            matMVP = m_mat4ProjectionLeft * m_mat4eyePosLeft * m_mat4HMDPose;
-        }
-        else if (nEye == vr::Eye_Right)
-        {
-            matMVP = m_mat4ProjectionRight * m_mat4eyePosRight * m_mat4HMDPose;
+            if (m_rTrackedDevicePose[nDevice].bPoseIsValid)
+            {
+                m_iValidPoseCount++;
+                m_rmat4DevicePose[nDevice] = ConvertSteamVRMatrixToMatrix4(m_rTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking);
+                if (m_rDevClassChar[nDevice] == 0)
+                {
+                    switch (m_pHMD->GetTrackedDeviceClass(nDevice))
+                    {
+                    case vr::TrackedDeviceClass_Controller:        m_rDevClassChar[nDevice] = 'C'; break;
+                    case vr::TrackedDeviceClass_HMD:               m_rDevClassChar[nDevice] = 'H'; break;
+                    case vr::TrackedDeviceClass_Invalid:           m_rDevClassChar[nDevice] = 'I'; break;
+                    case vr::TrackedDeviceClass_GenericTracker:    m_rDevClassChar[nDevice] = 'G'; break;
+                    case vr::TrackedDeviceClass_TrackingReference: m_rDevClassChar[nDevice] = 'T'; break;
+                    default:                                       m_rDevClassChar[nDevice] = '?'; break;
+                    }
+                }
+                m_strPoseClasses += m_rDevClassChar[nDevice];
+            }
         }
 
-        return matMVP;
+        if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
+        {
+            m_mat4HMDPose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd];
+            m_mat4HMDPose = glm::inverse(m_mat4HMDPose);
+        }
     }
 
     glm::mat4 GetViewMatrix(vr::Hmd_Eye nEye) {
