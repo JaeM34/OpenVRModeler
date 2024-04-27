@@ -18,6 +18,7 @@
 #include"imgui.h"
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
+#include"imgui_internal.h"
 
 #include "Renderer/Model.h"
 
@@ -26,15 +27,9 @@
 #include <filesystem>
 #include "Renderer/Scene.h"
 
-struct Vertex {
-    unsigned int index;
-    float x;
-    float y;
-    float z;
+#include <dirent.h>
+#include <limits.h>
 
-    std::vector<unsigned int> edges;
-};
-// window settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 //camera settings
@@ -48,7 +43,7 @@ bool firstMouse = true;
 //vector
 int vertex_size = 0;
 int total_edges;
-std::vector<Vertex> verticese;
+//std::vector<Vertex> verticese;
 
 
 float fov = 45.0f;
@@ -59,7 +54,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
+//void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
 
 std::vector<GLfloat> vertices;
 std::vector<GLuint> indices;
@@ -98,7 +93,11 @@ int main() {
 
     // Create a Shader object and load shaders from files
     Shader shader("shaders/Base.shader");
+    glm::vec3 lightPos(2.0f, 1.0f, 2.0f);
     shader.Bind();
+    //shader.SetVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    //shader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    //shader.SetVec3("lightPos", lightPos);
                                      
     Renderer renderer;
     // Use the shader program
@@ -110,126 +109,6 @@ int main() {
     // Set up mouse button callback function
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-    GLfloat verticespyramid[] = {
-    -0.5f, 0.0f, -0.5f,
-    0.5f, 0.0f, -0.5f,
-    0.5f, 0.0f, 0.5f,
-    -0.5f, 0.0f, 0.5f,
-    0.0f, 1.0f, 0.0f
-    };
-
-    GLuint indicespyramid[] = {
-        0, 1, 4,
-        1, 2, 4,
-        2, 3, 4,
-        3, 0, 4
-    };
-    // Vertices for a unit cube centered at the origin
-    const float verticesCube[] = {
-        // Front face
-        -0.5f, -0.5f,  0.5f, // 0
-         0.5f, -0.5f,  0.5f, // 1
-         0.5f,  0.5f,  0.5f, // 2
-        -0.5f,  0.5f,  0.5f, // 3
-
-        // Back face
-        -0.5f, -0.5f, -0.5f, // 4
-         0.5f, -0.5f, -0.5f, // 5
-         0.5f,  0.5f, -0.5f, // 6
-        -0.5f,  0.5f, -0.5f, // 7
-    };
-
-    // Indices for a unit cube (using triangles)
-    const unsigned int indicesCube[] = {
-        // Front face
-        0, 1, 2,
-        2, 3, 0,
-
-        // Right face
-        1, 5, 6,
-        6, 2, 1,
-
-        // Back face
-        5, 4, 7,
-        7, 6, 5,
-
-        // Left face
-        4, 0, 3,
-        3, 7, 4,
-
-        // Bottom face
-        0, 1, 5,
-        5, 4, 0,
-
-        // Top face
-        3, 2, 6,
-        6, 7, 3
-    };
-    // Vertices for a unit 3D rectangular prism centered at the origin
-    const float verticesrec[] = {
-        // Front face
-        -1.5f, -0.5f,  0.5f, // 0: Bottom-left
-         1.5f, -0.5f,  0.5f, // 1: Bottom-right
-         1.5f,  0.5f,  0.5f, // 2: Top-right
-        -1.5f,  0.5f,  0.5f, // 3: Top-left
-
-        // Back face
-        -1.5f, -0.5f, -0.5f, // 4: Bottom-left
-         1.5f, -0.5f, -0.5f, // 5: Bottom-right
-         1.5f,  0.5f, -0.5f, // 6: Top-right
-        -1.5f,  0.5f, -0.5f  // 7: Top-left
-    };
-
-    // Indices for the rectangular prism (12 triangles, 6 faces)
-    const unsigned int indicesrec[] = {
-        // Front face
-        0, 1, 2,
-        2, 3, 0,
-
-        // Right face
-        1, 5, 6,
-        6, 2, 1,
-
-        // Back face
-        5, 4, 7,
-        7, 6, 5,
-
-        // Left face
-        4, 0, 3,
-        3, 7, 4,
-
-        // Bottom face
-        0, 1, 5,
-        5, 4, 0,
-
-        // Top face
-        3, 2, 6,
-        6, 7, 3
-    };
-
-    // CREATION OF FRAME BUFFER
-    //unsigned int fbo;
-    //glGenFramebuffers(1, &fbo);
-    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-
-    // Generating buffers for Arrays and Index buffers
-    VertexArray vapyramid;
-    VertexBuffer vbpyramid(verticespyramid, sizeof(verticespyramid));
-    VertexBufferLayout layout;
-    layout.Push<float>(3);
-    vapyramid.AddBuffer(vbpyramid, layout);
-    IndexBuffer ibpyramid(indicespyramid, sizeof(indicespyramid));
-
-    VertexArray vaCube;
-    VertexBuffer vbCube(verticesCube, sizeof(verticesCube));
-    vaCube.AddBuffer(vbCube, layout);
-    IndexBuffer ibCube(indicesCube, sizeof(indicesCube));
-
-    VertexArray varec;
-    VertexBuffer vbrec(verticesrec, sizeof(verticesrec));
-    varec.AddBuffer(vbrec, layout);
-    IndexBuffer ibrec(indicesrec, sizeof(indicesrec));
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -237,34 +116,47 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f); 
-    glm::vec4 objectColorC = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);
-    glm::vec4 objectColorR = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);
-
-    glm::mat4 m = glm::mat4(1.0f);
-    glm::mat4 m1 = glm::mat4(1.0f);
-    glm::mat4 m2 = glm::mat4(1.0f);
-    // render loop
-    bool drawTriangle = false;
-    bool drawCube = false;
-    bool drawrec = false;
-    float rotateAngle = m[3][0]; // Initial rotation angle
-    float rotateAngleC = m1[3][0]; // Initial rotation angle
-    float rotateAngleR = m2[3][0]; // Initial rotation angle
-
-    float scaleValue = 1.0f; // Initial scale value
-    float scaleValueC = 1.0f; // Initial scale value
-    float scaleValueR = 1.0f; // Initial scale value
-
+    std::vector<string> supportModels = {
+        ".3mf", ".dae", ".xml", ".blend", ".bvh", ".3ds", ".ase", ".glTF", ".glTF", ".fbx",
+        ".ply", ".dxf", ".ifc", ".iqm", ".nff", ".nff", ".smd", ".vta", ".mdl", ".md2",
+        ".md3", ".pk3", ".mdc", ".md5mesh", ".md5anim", ".md5camera", ".x", ".q3o", ".q3s",
+        ".raw", ".ac", ".ac3d", ".stl", ".dxf", ".irrmesh", ".xml", ".irr", ".xml", ".off",
+        ".obj", ".ter", ".mdl", ".hmp", ".mesh.xml", ".skeleton.xml", ".material", ".ogex", ".ms3d",
+        ".lwo", ".lws", ".lxo", ".csm", ".ply", ".cob", ".scn", ".xgl",
+    };
 
     std::vector<Model> models;
+
+    DIR* directory = opendir("models");
+    if (directory != nullptr) {
+        struct dirent* entry;
+        while ((entry = readdir(directory)) != nullptr) {
+            if (entry->d_type == DT_REG) {
+                for (string filetype : supportModels) {
+                    if (std::strstr(entry->d_name, filetype.c_str())) {
+                        char truePath[PATH_MAX];
+                        snprintf(truePath, sizeof(truePath), "./models/%s", entry->d_name);
+                        Model m(truePath, false);
+                        models.push_back(m);
+                        std::cout << "File: " << entry->d_name << std::endl;
+                    }
+
+                }
+            }
+        }
+
+        closedir(directory);
+    }
+    else {
+        std::cerr << "Failed to open directory." << std::endl;
+    }
+
     std::vector<Mesh> meshes;
     std::vector<Material> materials;
-    models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\FinalBaseMesh.obj", false));
-    models.push_back(Model("C:\\Users\\deft\\Documents\\Classes\\Comp490\\OpenVR-3DModelerTool\\sphere.fbx", false));
 
     Scene scene(models, meshes, materials, camera, shader);
-    scene.draw();
+    int index = 1;
+    int i = 0;
 
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
@@ -277,23 +169,129 @@ int main() {
         ImGui::Text("Settings");
         ImGui::Text("Draw Objects");
 
-        //index_pos = vertex_size - 1;
-        //scene.draw();
-        
-        for (Model &m : scene.models) {
-            m.Scale(1.0005f);
-            m.RotateX(1.0f);
-            m.RotateY(1.0f);
-            m.RotateZ(1.0f);
-            m.Forward(0.05f);
-            m.Strafe(0.05f);
-            m.Upwards(0.05f);
+        if (index > scene.models.size()) {
+            index = scene.models.size();
         }
 
-        scene.RenderFrame();
+        if (ImGui::Button("<")) {
+            if (index > 1) {
+                index--;
+            }
+        }
+        ImGui::SameLine();
+        ImGui::Text("< %d >", index);
+        ImGui::SameLine();
+        if (ImGui::Button(">")) {
+            if (index < scene.models.size()) {
+                index++;
+            }
+        }
+        i = index - 1;
+
+        if (scene.models.size() > 0) {
+            bool move = false;
+            ImGui::Columns(3, "Coordinates");
+
+            //--- Movement Along X-Axis
+            ImGui::Text("Move X-Axis");
+            ImGui::Button("+X");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Forward(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-X");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Forward(-1.0f);
+            }
+            //--- Movement Along Y-Axis
+            ImGui::Text("Move Y-Axis");
+            ImGui::Button("+Y");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Upwards(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-Y");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Upwards(-1.0f);
+            }
+            //--- Movement Along Z-Axis
+            ImGui::Text("Move Z-Axis");
+            ImGui::Button("+Z");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Strafe(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-Z");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Strafe(-1.0f);
+            }
+            ImGui::NextColumn();
+
+
+            //--- Rotate Along X-Axis
+            ImGui::Text("Rotate X-Axis");
+            ImGui::Button("+Pitch");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateX(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-Pitch");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateX(-1.0f);
+            }
+
+            //--- Rotate Along Y-Axis
+            ImGui::Text("Rotate Y-Axis");
+            ImGui::Button("+Yaw");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateY(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-Yaw");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateY(-1.0f);
+            }
+
+            //--- Rotate Along Z-Axis
+            ImGui::Text("Rotate Z-Axis");
+            ImGui::Button("+Roll");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateZ(1.0f);
+            }
+            ImGui::SameLine();
+            ImGui::Button("-Roll");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].RotateZ(-1.0f);
+            }
+
+            ImGui::NextColumn();
+            ImGui::Text("Scale");
+            ImGui::Button("+");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Scale(1.005f);
+            }
+            ImGui::Button("-");
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Scale(0.995f);
+            }
+
+            ImGui::Text("Duplicate");
+            if (ImGui::Button("[]")) {
+                Model m = *new Model(scene.models[i]);
+                scene.models.push_back(m);
+            }
+
+            ImGui::Text("Delete");
+            if (ImGui::Button("][")) {
+                scene.models.erase(scene.models.begin() + i);
+            }
+            if (ImGui::IsItemActive()) {
+                scene.models[i].Scale(1.005f);
+            }
+            ImGui::EndColumns();
+        }
         scene.Render();
-        scene.draw();
-        //scene.draw();
+        scene.RenderStereoTargets();
 
         if (ImGui::Button("Close Application")) {
             //Action to close the application
@@ -301,151 +299,13 @@ int main() {
         }
         ImGui::End();
         ImGui::Render();
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
     }
-    /*
-    while (!glfwWindowShouldClose(window)) {
-        
-
-
-        processInput(window);
-
-
-        index_pos = vertex_size - 1;
-        // Use the shader program
-        shader.Bind();
-        // Generating buffers for Arrays and Index buffers
-        VertexArray va;
-        VertexBufferLayout layout;
-        layout.Push<float>(3);
-        VertexBuffer vb(&vertices[0], sizeof(GLfloat) * 3 * vertex_size);
-        va.AddBuffer(vb, layout);
-        IndexBuffer ib(&indices[0], sizeof(GLuint) * 2 * total_edges);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
-
-        camera.OnRender();
-
-        // View matrix: Position the camera
-        //glm::mat4 view = glm::lookAt(camera, cameraPos + cameraFront, cameraUp);
-        shader.SetUniformMat4f("view", camera.ViewMatrix());
-        // Projection matrix setup
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        shader.SetUniformMat4f("proj", projection);
-        ImGui::Text("Draw Objects");
-
-        ImGui::Checkbox("Draw Pyramid", &drawTriangle);
-        if (drawTriangle)
-        {
-            ImGui::ColorEdit4("Pyramid: Color", glm::value_ptr(objectColor));
-            m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
-            m = glm::rotate(m, glm::radians(rotateAngle), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
-            m = glm::scale(m, glm::vec3(scaleValue));  // Update the scale matrix
-
-            shader.SetUniformMat4f("model", m);
-            shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
-            ImGui::SliderFloat("Pyramid: Scale", &scaleValue, 0.1f, 10.0f);
-
-            ImGui::SliderFloat("Pyramid: Rotate", &rotateAngle, -180.0f, 180.0f);
-
-            // ImGui slider for translation in X-axis
-            ImGui::SliderFloat("Pyramid: Translate X", &m[3][0], -10.0f, 20.0f);
-
-            // ImGui slider for translation in Y-axis
-            ImGui::SliderFloat("Pyramid: Translate Y", &m[3][1], -0.50f, 20.0f);
-
-            // ImGui slider for translation in Z-axis
-            ImGui::SliderFloat("Pyramid: Translate Z", &m[3][2], -10.0f, 10.0f);
-
-
-            renderer.Draw1(vapyramid, ibpyramid, shader);
-        }
-        ImGui::Checkbox("Draw Cube", &drawCube);
-        if (drawCube)
-        {
-            ImGui::ColorEdit4("Cube: Color", glm::value_ptr(objectColorC));
-            m1 = glm::translate(glm::mat4(1.0f), glm::vec3(m1[3][0], m1[3][1], m1[3][2]));  // Update the translation matrix
-            m1 = glm::rotate(m1, glm::radians(rotateAngleC), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
-            m1 = glm::scale(m1, glm::vec3(scaleValueC));  // Update the scale matrix
-
-            shader.SetUniformMat4f("model", m1);
-            shader.SetUniform4f("U_Color", objectColorC.r, objectColorC.g, objectColorC.b, objectColorC.a);
-            ImGui::SliderFloat("Cube: Scale", &scaleValueC, 0.1f, 10.0f);
-
-            ImGui::SliderFloat("Cube: Rotate", &rotateAngleC, -180.0f, 180.0f);
-            // ImGui slider for translation in X-axis
-            ImGui::SliderFloat("Cube: Translate X", &m1[3][0], -10.0f, 20.0f);
-
-            // ImGui slider for translation in Y-axis
-            ImGui::SliderFloat("Cube: Translate Y", &m1[3][1], -0.50f, 20.0f);
-
-            // ImGui slider for translation in Z-axis
-            ImGui::SliderFloat("Cube: Translate Z", &m1[3][2], -10.0f, 10.0f);
-            renderer.Draw1(vaCube, ibCube, shader);
-        }
-        ImGui::Checkbox("Draw rec", &drawrec);
-        if (drawrec)
-        {
-            ImGui::ColorEdit4("Rectangular: Color", glm::value_ptr(objectColorR));
-            m2 = glm::translate(glm::mat4(1.0f), glm::vec3(m2[3][0], m2[3][1], m2[3][2]));  // Update the translation matrix
-            m2 = glm::rotate(m2, glm::radians(rotateAngleR), glm::vec3(0.0f, 1.0f, 0.0f));  // Update the rotation matrix
-            m2 = glm::scale(m2, glm::vec3(scaleValueR));  // Update the scale matrix
-
-            shader.SetUniformMat4f("model", m2);
-            shader.SetUniform4f("U_Color", objectColorR.r, objectColorR.g, objectColorR.b, objectColorR.a);
-            // ImGui slider for translation in X-axis
-            ImGui::SliderFloat("Rectangular: Scale", &scaleValueR, 0.1f, 12.0f);
-
-            ImGui::SliderFloat("Rectangular: Rotate", &rotateAngleR, -180.0f, 180.0f);
-
-            ImGui::SliderFloat("Rectangular: Translate X", &m2[3][0], -10.0f, 20.0f);
-
-            // ImGui slider for translation in Y-axis
-            ImGui::SliderFloat("Rectangular: Translate Y", &m2[3][1], -0.50f, 20.0f);
-
-            // ImGui slider for translation in Z-axis
-            ImGui::SliderFloat("Rectangular: Translate Z", &m2[3][2], -10.0f, 10.0f);
-            renderer.Draw1(varec, ibrec, shader);
-        }
-
-
-        //model.Draw(shader);
-        //scene.draw();
-     
-        
-        if (ImGui::Button("Close Application")) {
-            //Action to close the application
-            return 0;
-        }
-
-
-        ImGui::End();
-
-       // vertex_size = vertices.size() / 3;
-      //  total_edges += 2;
-
-        //grid
-        glm::mat4 grid = glm::mat4(1.0f);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        grid = glm::translate(grid, glm::vec3(-50.0f, -0.5f, -100.0f));
-        shader.SetUniformMat4f("model", grid);
-        shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
-        glLineWidth(5.0f);
-        //renderer.Draw(vaGrid, ibGrid, shader);
-        
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
-
-        glfwPollEvents();
-    }
-    */
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -531,104 +391,4 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
-}
-
-void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& indices)
-{
-    std::cout << "index: " << v.index;
-    std::cout << " x: " << v.x;
-    std::cout << ", y: " << v.y;
-    std::cout << ", z: " << v.z;
-    vertices.push_back(v.x);
-    vertices.push_back(v.y);
-    vertices.push_back(v.z);
-
-    int i;
-    int edge_size = v.edges.size();
-    std::cout << " edges: ";
-    for (i = 0; i < edge_size; i++) {
-        indices.push_back(v.index);
-        indices.push_back(v.edges[i]);
-        std::cout << v.index << ", ";
-        std::cout << v.edges[i] << ", ";
-    }
-    std::cout << std::endl;
-}
-
-//function for creating cylinder - not rendering properly though. works on previous versions
-void createCylinder(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices, float radius, float height, int sides) {
-    float angleIncrement = glm::two_pi<float>() / static_cast<float>(sides);
-
-    // Top and bottom vertices
-    vertices.push_back(0.0f);  // Center of the bottom circle
-    vertices.push_back(-height / 2.0f);
-    vertices.push_back(0.0f);
-
-    vertices.push_back(0.0f);  // Center of the top circle
-    vertices.push_back(height / 2.0f);
-    vertices.push_back(0.0f);
-
-    // Vertices for the sides
-    for (int i = 0; i < sides; ++i) {
-        float x = radius * cos(angleIncrement * i);
-        float z = radius * sin(angleIncrement * i);
-
-        // Bottom circle vertices
-        vertices.push_back(x);
-        vertices.push_back(-height / 2.0f);
-        vertices.push_back(z);
-
-        // Top circle vertices
-        vertices.push_back(x);
-        vertices.push_back(height / 2.0f);
-        vertices.push_back(z);
-    }
-
-    // Indices for the sides
-    for (int i = 0; i < sides; ++i) {
-        // Side triangles
-        indices.push_back(0);                   // Center of bottom circle
-        indices.push_back(2 * i + 2);           // Next point on bottom circle
-        indices.push_back(2 * ((i + 1) % sides) + 2); // Next point on bottom circle in next segment
-
-        indices.push_back(1);                   // Center of top circle
-        indices.push_back(2 * i + 3);           // Next point on top circle in current segment
-        indices.push_back(2 * ((i + 1) % sides) + 3); // Next point on top circle in next segment
-    }
-}
-
-//function for Sphere. also doesnt render on current version.
-void createSphere(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices, float radius, int stacks, int slices) {
-    // Iterate through the stacks (vertical divisions)
-    for (int i = 0; i <= stacks; ++i) {
-        // Calculate the vertical angle (phi) for the current stack
-        float phi = glm::pi<float>() * static_cast<float>(i) / static_cast<float>(stacks);
-
-        // Iterate through the slices (horizontal divisions)
-        for (int j = 0; j <= slices; ++j) {
-            // Calculate the horizontal angle (theta) for the current slice
-            float theta = 2.0f * glm::pi<float>() * static_cast<float>(j) / static_cast<float>(slices);
-
-            // Convert spherical coordinates to Cartesian coordinates
-            float x = cos(theta) * sin(phi);
-            float y = cos(phi);
-            float z = sin(theta) * sin(phi);
-
-            // Add the Cartesian coordinates of the current vertex to the vertices vector
-            vertices.push_back(radius * x); // x coordinate
-            vertices.push_back(radius * y); // y coordinate
-            vertices.push_back(radius * z); // z coordinate
-
-            // Create triangles by connecting vertices in a winding order
-            if (i != stacks) {
-                indices.push_back((i * (slices + 1)) + j);
-                indices.push_back(((i + 1) * (slices + 1)) + j);
-                indices.push_back((i * (slices + 1)) + j + 1);
-
-                indices.push_back(((i + 1) * (slices + 1)) + j);
-                indices.push_back(((i + 1) * (slices + 1)) + j + 1);
-                indices.push_back((i * (slices + 1)) + j + 1);
-            }
-        }
-    }
 }

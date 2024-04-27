@@ -47,7 +47,7 @@ public:
     void Draw(Shader& shader)
     {
         shader.SetUniformMat4f("model", m);
-        shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+        //shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
@@ -89,6 +89,15 @@ public:
         //m[3][1] += distance;
         //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], distance));  // Update the translation matrix
         m = glm::translate(m, glm::vec3(0.0f, distance / 10, 0.0f));
+    }
+
+    void Transform(glm::vec3 pos) {
+        pos *= 10;
+        m = glm::translate(glm::mat4(1.0f), pos);
+
+        //m[0][3] = pos.x;
+        //m[1][3] = pos.y;
+        //m[2][3] = pos.z;
     }
 
 private:

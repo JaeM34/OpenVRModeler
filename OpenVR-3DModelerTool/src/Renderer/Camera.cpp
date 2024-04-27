@@ -39,37 +39,6 @@ void Camera::Rotate(float yaw, float pitch)
 	m_View = glm::normalize(front);
 }
 
-//void Camera::RotateX(float radians)
-//{
-//	m_Rotation.x += radians;
-//
-//	Rotate(radians, m_Right.x, m_Right.y, m_Right.z);
-//	m_Up = glm::cross(m_Right, m_View);
-//}
-//
-//void Camera::RotateY(float radians)
-//{
-//	m_Rotation.y += radians;
-//
-//	Rotate(radians, m_Right.x, m_Right.y, m_Right.z);
-//	m_Up = glm::cross(m_Right, m_View);
-//}
-//
-//void Camera::RotateZ(float radians)
-//{
-//	m_Rotation.z += radians;
-//
-//	Rotate(radians, m_Right.x, m_Right.y, m_Right.z);
-//	m_Up = glm::cross(m_Right, m_View);
-//}
-
-
-
-void Camera::Transform(float x, float y, float z)
-{
-
-}
-
 void Camera::MoveForward(float distance)
 {
 	m_Position = m_Position + (m_View * distance);
