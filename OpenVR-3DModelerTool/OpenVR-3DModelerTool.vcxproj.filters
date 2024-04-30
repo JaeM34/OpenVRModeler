@@ -69,7 +69,7 @@
     <ClCompile Include="src\Renderer\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\OpenVR\VRApplication.cpp">
+    <ClCompile Include="src\OpenVR\VRCamera.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -135,6 +135,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\OpenVR\VRInputs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,8 @@
-/*#shader vertex
+#shader vertex
 #version 330 core
-
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 proj;
 layout(location = 0) in vec3 aPos;
 void main()
 {
@@ -16,4 +18,4 @@ uniform vec4 U_Color;
 void main()
 {
     FragColor = U_Color;
-}*/
+}

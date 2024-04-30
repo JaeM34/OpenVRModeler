@@ -139,6 +139,7 @@ int main() {
                         Model m(truePath, false);
                         models.push_back(m);
                         std::cout << "File: " << entry->d_name << std::endl;
+                        break;
                     }
 
                 }
