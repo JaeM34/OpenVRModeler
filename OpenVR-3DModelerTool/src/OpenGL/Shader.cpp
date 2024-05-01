@@ -30,11 +30,12 @@ Shader::Shader(const std::string& filepath)
     // ------------------------------------
     // vertex shader & fragment shader
     m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
+    ID = m_RendererID;
 }
 
 Shader::~Shader()
 {
-    GLCall(glDeleteProgram(m_RendererID));
+    //GLCall(glDeleteProgram(m_RendererID));
 }
 
 unsigned int Shader::CompileShader(unsigned int type, const std::string& source)

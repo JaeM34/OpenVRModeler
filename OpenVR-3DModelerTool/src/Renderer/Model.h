@@ -30,22 +30,34 @@ public:
     // model data 
     vector<Mesh::Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh> meshes;
+    Shader shader;
     string directory;
     bool gammaCorrection;
     glm::mat4 m = glm::mat4(1.0f);      // Matrix for transformation
-    glm::vec4 objectColor = glm::vec4(0.8f, 0.3f, 0.02f, 1.0f);     // Object Colors
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const& path, bool gamma = false) : gammaCorrection(gamma)
+    Model(string const& path, bool gamma = false) : 
+        shader(Shader("shaders/BaseLightedShader.shader")),
+        gammaCorrection(gamma)
     {
         loadModel(path);
     }
 
     // draws the model, and thus all its meshes
-    void Draw(Shader& shader)
+    void Draw()
     {
-        shader.SetUniformMat4f("model", m);
-        //shader.SetUniform4f("U_Color", objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+        shader.SetVec3("light.direction", -0.2f, -1.0f, -0.3f);
+
+        // light properties
+        shader.SetVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        shader.SetVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        shader.SetVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        shader.SetFloat("material.shininess", 32.0f);
+
+
+        shader.SetMat4("model", m);
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
@@ -99,6 +111,7 @@ public:
     }
 
 private:
+    string m_path;
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path)
     {
@@ -113,6 +126,7 @@ private:
         }
         // retrieve the directory path of the filepath
         directory = path.substr(0, path.find_last_of('/'));
+        m_path = path;
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
@@ -245,29 +259,50 @@ private:
             {   // if texture hasn't been loaded already, load it
                 Mesh::Texture texture;
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
+                shader.SetInt("material.diffuse", texture.id);
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
                 textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
             }
         }
+
+        if (mat->GetTextureCount(type) == 0) {
+            string strr = m_path.substr((m_path.find_last_of('/') + 1));
+            int lastLoc = strr.find_last_of('.');
+            strr = strr.substr(0, lastLoc);
+            strr = "textures/" + strr + "/diffuse.png";
+            Mesh::Texture texture;
+            texture.id = TextureFromFile(strr.c_str(), this->directory);
+            shader.SetInt("material.diffuse", texture.id);
+            texture.type = typeName;
+            texture.path = "shaders/default.png";
+            textures.push_back(texture);
+            textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
+        }
         return textures;
     }
 };
 
-
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
 {
     string filename = string(path);
+    std::cout << "Filename " << filename << std::endl;
+    std::cout << "Directory " << directory << std::endl;
     filename = directory + '/' + filename;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (!data) {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        data = stbi_load("shaders/default.png", &width, &height, &nrComponents, 0);
+    }
     if (data)
     {
+        std::cout << "loaded texture at path: " << path << std::endl;
         GLenum format;
         if (nrComponents == 1)
             format = GL_RED;
@@ -289,7 +324,7 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        std::cout << "Texture loading failed" << std::endl;
         stbi_image_free(data);
     }
 

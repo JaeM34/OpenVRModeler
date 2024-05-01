@@ -13,15 +13,11 @@
 class Scene {
 public:
 	std::vector<Model> models;
-	std::vector<Mesh> meshes;
-	std::vector<Material> materials;
 	Camera& camera;
     VRCamera vrCam;
 
-    Scene(std::vector<Model> models, std::vector<Mesh> meshes, std::vector<Material> materials, Camera& camera, Shader& shader) :
+    Scene(std::vector<Model> models, Camera& camera, Shader& shader) :
         models(models),
-        meshes(meshes),
-        materials(materials),
         camera(camera),
         m_shader(shader),
         vbGrid(NULL, 0),
@@ -29,6 +25,9 @@ public:
         vaGrid(),
         layoutGrid()
     {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
         init();
 	}
 	~Scene() {};
@@ -37,16 +36,18 @@ public:
 		// Create a Shader object and load shaders from files
 		for (Model& model : models) {
             //model.Transform((vrCam.position));
-			model.Draw(m_shader);
+            model.shader.Bind();
+			model.Draw();
 		}
 	}
 
 	void Render() {
         // Use the shader program
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glFrontFace(GL_CCW);
+
         // Use the shader program
+
+        glEnable(GL_DEPTH_TEST);
+
         m_shader.Bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
@@ -67,7 +68,16 @@ public:
         m_shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
         glLineWidth(5.0f);
         renderer.Draw(vaGrid, ibGrid, m_shader);
-        draw();
+
+        for (Model& model : models) {
+            model.shader.Bind();
+            model.shader.SetMat4("view", camera.ViewMatrix());
+            model.shader.SetMat4("projection", projection);
+            model.shader.SetVec3("viewPos", camera.m_Position);
+            model.Draw();
+            //model.Transform((vrCam.position));
+        }
+        //draw();
 	}
 
     void RenderStereoTargets() {

@@ -90,19 +90,10 @@ int main() {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
-    // Create a Shader object and load shaders from files
-    Shader shader("shaders/Base.shader");
-    glm::vec3 lightPos(2.0f, 1.0f, 2.0f);
-    shader.Bind();
-    //shader.SetVec3("objectColor", 1.0f, 0.5f, 0.31f);
-    //shader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    //shader.SetVec3("lightPos", lightPos);
                                      
     Renderer renderer;
     // Use the shader program
     // Enable depth testing
-    glEnable(GL_DEPTH_TEST);
 
     // Set up callback functions
     glfwSetCursorPosCallback(window, cursor_pos_callback);
@@ -152,10 +143,8 @@ int main() {
         std::cerr << "Failed to open directory." << std::endl;
     }
 
-    std::vector<Mesh> meshes;
-    std::vector<Material> materials;
-
-    Scene scene(models, meshes, materials, camera, shader);
+    Shader shader("shaders/Base.shader");
+    Scene scene(models, camera, shader);
     int index = 1;
     int i = 0;
 
@@ -284,7 +273,7 @@ int main() {
 
             ImGui::Text("Delete");
             if (ImGui::Button("][")) {
-                scene.models.erase(scene.models.begin() + i);
+                //scene.models.erase(scene.models.begin() + i);
             }
             if (ImGui::IsItemActive()) {
                 scene.models[i].Scale(1.005f);
@@ -292,7 +281,7 @@ int main() {
             ImGui::EndColumns();
         }
         scene.Render();
-        scene.RenderStereoTargets();
+        //scene.RenderStereoTargets();
 
         if (ImGui::Button("Close Application")) {
             //Action to close the application
