@@ -25,6 +25,8 @@ public:
 
     // Settings
     float m_fov;
+    float scrWidth = 1920;
+    float scrHeight = 1080;
 
     Camera(float x, float y, float z);
 

@@ -8,7 +8,7 @@
 class VRCamera {
 public:
     float m_fNearClip = 0.1f;
-    float m_fFarClip = 30.0f;
+    float m_fFarClip = 100.0f;
     glm::vec3 pos = glm::vec3(1.0f);
     float dist = 0.0f;
     float yaw = 0.0f;

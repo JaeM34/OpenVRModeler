@@ -56,7 +56,6 @@ public:
         // material properties
         shader.SetFloat("material.shininess", 32.0f);
 
-
         shader.SetMat4("model", m);
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
@@ -219,18 +218,30 @@ private:
         // normal: texture_normalN
 
         // 1. diffuse maps
-        vector<Mesh::Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        vector<Mesh::Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+        for (Mesh::Texture diffuse : diffuseMaps) {
+            shader.SetInt("material.diffuse", diffuse.id);
+        }
         // 2. specular maps
-        vector<Mesh::Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        vector<Mesh::Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+        for (Mesh::Texture specular : specularMaps) {
+            shader.SetInt("material.specular", specular.id);
+        }
         // 3. normal maps
-        std::vector<Mesh::Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<Mesh::Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+        for (Mesh::Texture normal : normalMaps) {
+            shader.SetInt("material.normal", normal.id);
+            shader.SetBool("material.normalLoad", true);
+        }
         // 4. height maps
-        std::vector<Mesh::Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+        std::vector<Mesh::Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-
+        for (Mesh::Texture height : heightMaps) {
+            shader.SetInt("material.height", height.id);
+        }
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
     }
@@ -259,22 +270,20 @@ private:
             {   // if texture hasn't been loaded already, load it
                 Mesh::Texture texture;
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
-                shader.SetInt("material.diffuse", texture.id);
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
                 textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
             }
         }
-
+        // No texture included with model, attempt to load user defined textures
         if (mat->GetTextureCount(type) == 0) {
             string strr = m_path.substr((m_path.find_last_of('/') + 1));
             int lastLoc = strr.find_last_of('.');
             strr = strr.substr(0, lastLoc);
-            strr = "textures/" + strr + "/diffuse.png";
+            strr = "textures/" + strr + "/" + typeName + ".png";
             Mesh::Texture texture;
             texture.id = TextureFromFile(strr.c_str(), this->directory);
-            shader.SetInt("material.diffuse", texture.id);
             texture.type = typeName;
             texture.path = "shaders/default.png";
             textures.push_back(texture);
@@ -286,19 +295,16 @@ private:
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
 {
-    string filename = string(path);
-    std::cout << "Filename " << filename << std::endl;
-    std::cout << "Directory " << directory << std::endl;
-    filename = directory + '/' + filename;
-
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
     unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    // Texture not found at location, give a default one back
     if (!data) {
         std::cout << "Texture failed to load at path: " << path << std::endl;
         data = stbi_load("shaders/default.png", &width, &height, &nrComponents, 0);
+        path = "shaders/default.png";
     }
     if (data)
     {
@@ -322,6 +328,7 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 
         stbi_image_free(data);
     }
+    // Error, texture failed. Something seriously went wrong
     else
     {
         std::cout << "Texture loading failed" << std::endl;

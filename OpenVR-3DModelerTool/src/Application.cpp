@@ -29,6 +29,7 @@
 
 #include <dirent.h>
 #include <limits.h>
+#include <Windows.h>
 
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
@@ -40,13 +41,6 @@ float pitch = 0.0f;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-//vector
-int vertex_size = 0;
-int total_edges;
-//std::vector<Vertex> verticese;
-
-
-float fov = 45.0f;
 
 bool isMousePressed = false;
 double lastMouseX, lastMouseY;
@@ -54,13 +48,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void createTextureFolder(string &path);
 //void addVertex(Vertex v, std::vector<GLfloat>& vertices, std::vector<GLuint>& indices);
 
 std::vector<GLfloat> vertices;
 std::vector<GLuint> indices;
 
 int main() {    
-    //OpenVRApplication openVR;
+    camera.scrHeight = SCR_HEIGHT;
+    camera.scrWidth = SCR_WIDTH;
 
     // Initialize GLFW
     if (!glfwInit()) {
@@ -127,6 +123,8 @@ int main() {
                     if (std::strstr(entry->d_name, filetype.c_str())) {
                         char truePath[PATH_MAX];
                         snprintf(truePath, sizeof(truePath), "./models/%s", entry->d_name);
+                        string path(truePath);
+                        createTextureFolder(path);
                         Model m(truePath, false);
                         models.push_back(m);
                         std::cout << "File: " << entry->d_name << std::endl;
@@ -273,7 +271,7 @@ int main() {
 
             ImGui::Text("Delete");
             if (ImGui::Button("][")) {
-                //scene.models.erase(scene.models.begin() + i);
+                scene.models.erase(scene.models.begin() + i);
             }
             if (ImGui::IsItemActive()) {
                 scene.models[i].Scale(1.005f);
@@ -281,7 +279,7 @@ int main() {
             ImGui::EndColumns();
         }
         scene.Render();
-        //scene.RenderStereoTargets();
+        scene.RenderStereoTargets();
 
         if (ImGui::Button("Close Application")) {
             //Action to close the application
@@ -381,4 +379,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+void createTextureFolder(string &path) {
+    string strr = path.substr((path.find_last_of('/') + 1));
+    int lastLoc = strr.find_last_of('.');
+    strr = strr.substr(0, lastLoc);
+    strr = "textures/" + strr + "/diffuse.png";
+    !CreateDirectoryA(strr.c_str(), NULL);
+    if (GetLastError() != ERROR_ALREADY_EXISTS) {
+        std::cout << "Created new directory " << strr << std::endl;
+    }
 }

@@ -42,10 +42,6 @@ public:
 	}
 
 	void Render() {
-        // Use the shader program
-
-        // Use the shader program
-
         glEnable(GL_DEPTH_TEST);
 
         m_shader.Bind();
@@ -56,7 +52,7 @@ public:
         // View matrix: Position the camera
         m_shader.SetUniformMat4f("view", camera.ViewMatrix());
         // Projection matrix setup
-        glm::mat4 projection = glm::perspective(glm::radians(camera.GetFov()), (float)1920 / 1080, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.GetFov()), (float)(camera.scrWidth / camera.scrHeight), 0.1f, 100.0f);
         m_shader.SetUniformMat4f("proj", projection);
 
         // Grid
@@ -75,9 +71,7 @@ public:
             model.shader.SetMat4("projection", projection);
             model.shader.SetVec3("viewPos", camera.m_Position);
             model.Draw();
-            //model.Transform((vrCam.position));
         }
-        //draw();
 	}
 
     void RenderStereoTargets() {
@@ -108,27 +102,17 @@ public:
     }
 
     void Render(vr::Hmd_Eye nEye) {
-        // Use the shader program
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glFrontFace(GL_CCW);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-
         // Use the shader program
         m_shader.Bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderer.SetBackgroundClr(0.2f, 0.3f, 0.3f, 1.0f);
         // Camera render
-        camera.OnRender();
         m_shader.SetUniformMat4f("view", glm::mat4(1.0f));
 
         // Projection matrix setup
         glm::mat4 projection = glm::perspective(glm::radians(camera.GetFov()), float(vrCam.GetRenderWidth() / vrCam.GetRenderHeight()), vrCam.m_fNearClip, vrCam.m_fFarClip);
         m_shader.SetUniformMat4f("proj", vrCam.GetCurrentViewProjectionMatrix(nEye));
-
-
 
         // Grid
         glm::mat4 grid = glm::mat4(1.0f);
@@ -139,29 +123,13 @@ public:
         m_shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
         glLineWidth(5.0f);
         renderer.Draw(vaGrid, ibGrid, m_shader);
-
-        draw();
-
-        //bool bIsInputAvailable = m_pHMD->IsInputAvailable();
-        //
-        ////handling VR events
-        //vr::VREvent_t event;
-        //while (m_pHMD->PollNextEvent(&event, sizeof(event))) {
-        //    switch (event.eventType) {
-        //    case vr::VREvent_TrackedDeviceActivated:
-        //        //filler for when we want to do something when controllers are connected.
-        //        break;
-        //
-        //        //button pressed
-        //    case vr::VREvent_ButtonPress:
-        //        std::cout << "Button pressed: " << event.data.controller.button << std::endl;
-        //        break;
-        //
-        //        //if i want, button unpressed would be VREvent_ButtonUnpress
-        //        //check https://github.com/ValveSoftware/openvr/wiki/VREvent_t for more documentation
-        //    }
-        //}
-
+        for (Model& model : models) {
+            model.shader.Bind();
+            model.shader.SetMat4("view", glm::mat4(1.0f));
+            model.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
+            model.shader.SetVec3("viewPos", vrCam.pos);
+            model.Draw();
+        }
     }
 		
 private:

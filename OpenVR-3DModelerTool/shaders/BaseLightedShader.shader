@@ -27,14 +27,16 @@ out vec4 FragColor;
 
 struct Material {
     sampler2D diffuse;
-    sampler2D specular;    
+    sampler2D specular;
+    sampler2D normal;
     float shininess;
+
+    bool normalLoad;
 }; 
 
 struct Light {
     //vec3 position;
     vec3 direction;
-
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -55,6 +57,11 @@ void main()
   	
     // diffuse 
     vec3 norm = normalize(Normal);
+    vec3 normalTex;
+    if(material.normalLoad) {
+        normalTex = texture(material.normal, TexCoords).rgb;
+        norm = normalize(normalTex * 2.0 - 1.0);
+    }
     // vec3 lightDir = normalize(light.position - FragPos);
     vec3 lightDir = normalize(-light.direction);  
     float diff = max(dot(norm, lightDir), 0.0);
