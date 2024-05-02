@@ -14,10 +14,18 @@ public:
     float yaw = 0.0f;
     glm::vec3 position{0.0f};
     glm::vec4 orientation;
-    glm::mat4 rotationMatrix;
+    glm::mat4 rotationMatrix{1.0f};
     glm::mat4 leftControllerMatrix;
     glm::mat4 rightControllerMatrix;
+    glm::mat4 leftControllerMatrixLast;
+    glm::mat4 rightControllerMatrixLast;
+    glm::mat4 leftControllerDelta;
+    glm::mat4 rightControllerDelta;
 
+    bool leftTrigger;
+    bool rightTrigger;
+    bool leftGrip;
+    bool rightGrip;
 
     struct FramebufferDesc
     {
@@ -46,6 +54,14 @@ public:
         vr::TrackedDeviceIndex_t leftControllerIndex = vr::k_unTrackedDeviceIndexInvalid;
         vr::TrackedDeviceIndex_t rightControllerIndex = vr::k_unTrackedDeviceIndexInvalid;
 
+        leftTrigger = false;
+        rightTrigger = false;
+        leftGrip = false;
+        rightGrip = false;
+
+        leftControllerMatrixLast = leftControllerMatrix;
+        rightControllerMatrixLast = rightControllerMatrix;
+        m_mat4HMDPose *= rotationMatrix;
         for (vr::TrackedDeviceIndex_t deviceIndex = 0; deviceIndex < vr::k_unMaxTrackedDeviceCount; deviceIndex++) {
             if (m_pHMD->IsTrackedDeviceConnected(deviceIndex)) {
                 vr::VRControllerState_t controllerState;
@@ -55,14 +71,29 @@ public:
                 // Get the role of the device
                 vr::ETrackedControllerRole controllerRole = m_pHMD->GetControllerRoleForTrackedDeviceIndex(deviceIndex);
                 if (packetNum != 0) {
-
                     //  Left Controller
                     if (controllerRole == vr::TrackedControllerRole_LeftHand) {
+                        if (controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) {
+                            leftTrigger = true;
+                        }
+                        //  Move Forward
+                        MoveForward(deadzoned(controllerState.rAxis[0].y, 0.5f) / 10);
+
+                        //  Strafe
+                        Strafe(deadzoned(controllerState.rAxis[0].x, 0.5f) / 10);
+
+                        //  Move object system
+                        vr::VRSystem()->GetControllerStateWithPose(vr::TrackingUniverseStanding, deviceIndex, &controllerState, sizeof(controllerState), &controllerPose);
+                        vr::HmdMatrix34_t matPose = controllerPose.mDeviceToAbsoluteTracking;
+                        glm::mat4 controllerMatrix = ConvertSteamVRMatrixToMatrix4(matPose);
+                        leftControllerMatrix = glm::inverse(glm::translate(glm::inverse(controllerMatrix) * rotationMatrix, pos));
+                    }
+                    // Right controller
+                    else if (controllerRole == vr::TrackedControllerRole_RightHand) {
                         //  Rotate Left or Right
                         yaw += glm::radians(deadzoned(controllerState.rAxis[0].x, 0.95f));
                         rotationMatrix = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-                        m_mat4HMDPose *= rotationMatrix;
-                        
+
                         //  Move up or Down
                         pos.y -= deadzoned(controllerState.rAxis[0].y, 0.5f) / 50;
 
@@ -70,37 +101,36 @@ public:
                         vr::VRSystem()->GetControllerStateWithPose(vr::TrackingUniverseStanding, deviceIndex, &controllerState, sizeof(controllerState), &controllerPose);
                         vr::HmdMatrix34_t matPose = controllerPose.mDeviceToAbsoluteTracking;
                         glm::mat4 controllerMatrix = ConvertSteamVRMatrixToMatrix4(matPose);
-                        rotationMatrix = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-                        leftControllerMatrix = glm::inverse(glm::translate(glm::inverse(controllerMatrix) * rotationMatrix, pos));
-
-                    }
-                    // Right controller
-                    else if (controllerRole == vr::TrackedControllerRole_RightHand) {
-                        //  Move Forward
-                        MoveForward(deadzoned(controllerState.rAxis[0].y, 0.5f) / 10);
-
-                        //  Strafe
-                        MoveLeftwards(deadzoned(controllerState.rAxis[0].x, 0.5f) / 10);
-
-                        //  Move object system
-                        vr::VRSystem()->GetControllerStateWithPose(vr::TrackingUniverseStanding, deviceIndex, &controllerState, sizeof(controllerState), &controllerPose);
-                        vr::HmdMatrix34_t matPose = controllerPose.mDeviceToAbsoluteTracking;
-                        glm::mat4 controllerMatrix = ConvertSteamVRMatrixToMatrix4(matPose);
-                        rotationMatrix = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
                         rightControllerMatrix = glm::inverse(glm::translate(glm::inverse(controllerMatrix) * rotationMatrix, pos));
                     }
                 }
             }
         }
-    }
+        // Calculate the deltas of controller movement
+        glm::mat4 deltaMat;
+        glm::quat rotatationCurrent;
+        glm::quat rotationLast;
+        glm::quat rotation_delta;
+        // Calculate delta of Left Controller
+        deltaMat = leftControllerMatrixLast - leftControllerMatrix;
+        rotatationCurrent = glm::quat_cast(glm::mat3(leftControllerMatrixLast));
+        rotationLast = glm::quat_cast(glm::mat3(leftControllerMatrix));
 
-    glm::quat GetOrientation() {
-        glm::mat3 rotationMat(
-            m_mat4HMDPose[0][0], m_mat4HMDPose[0][1], m_mat4HMDPose[0][2],
-            m_mat4HMDPose[1][0], m_mat4HMDPose[1][1], m_mat4HMDPose[2][2],
-            m_mat4HMDPose[2][0], m_mat4HMDPose[2][1], m_mat4HMDPose[2][2]
-        );
-        return glm::toQuat(rotationMat);
+        rotation_delta = rotationLast * glm::inverse(rotatationCurrent);
+        leftControllerDelta = glm::mat4(1.0f ) * glm::mat4_cast(rotation_delta);
+        leftControllerDelta[3][0] = deltaMat[3][0];
+        leftControllerDelta[3][1] = deltaMat[3][1];
+        leftControllerDelta[3][2] = deltaMat[3][2];
+
+        // Calculate Delta of Right Controller
+        deltaMat = rightControllerMatrixLast - rightControllerMatrix;
+        rotatationCurrent = glm::quat_cast(glm::mat3(rightControllerMatrixLast));
+        rotationLast = glm::quat_cast(glm::mat3(rightControllerMatrix));
+        rotation_delta = rotationLast * glm::inverse(rotatationCurrent);
+        rightControllerDelta = glm::mat4(1.0f) * glm::mat4_cast(rotation_delta);
+        rightControllerDelta[3][0] = deltaMat[3][0];
+        rightControllerDelta[3][1] = deltaMat[3][1];
+        rightControllerDelta[3][2] = deltaMat[3][2];
     }
 
     void MoveForward(float distance) {
@@ -110,7 +140,7 @@ public:
         pos.z += direction.z;
     }
 
-    void MoveLeftwards(float distance) {
+    void Strafe(float distance) {
         glm::vec4 direction = glm::inverse(m_mat4HMDPose) * glm::vec4(-distance, 0.0f, 0.0f, 0.0f);
         pos.x += direction.x;
         pos.y += direction.y;

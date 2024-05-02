@@ -20,6 +20,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 using namespace std;
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
@@ -79,34 +81,45 @@ public:
     // Rotate
     void RotateZ(float angles) {
         m = glm::rotate(m, glm::radians(angles), glm::vec3(0.0f, 0.0f, 1.0f));  // Update the rotation matrix
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                std::cout << m[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 
     // Transforms
     void Forward(float distance) {
-        //m[3][2] += distance;
-        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], m[3][2]));  // Update the translation matrix
         m = glm::translate(m, glm::vec3(0.0f, 0.0f, distance / 10));
     }
 
     void Strafe(float distance) {
-        //m[3][0] += distance;
-        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], distance, m[3][2]));  // Update the translation matrix
         m = glm::translate(m, glm::vec3(distance / 10, 0.0f, 0.0f));
     }
 
     void Upwards(float distance) {
-        //m[3][1] += distance;
-        //m = glm::translate(glm::mat4(1.0f), glm::vec3(m[3][0], m[3][1], distance));  // Update the translation matrix
         m = glm::translate(m, glm::vec3(0.0f, distance / 10, 0.0f));
     }
 
-    void Transform(glm::vec3 pos) {
-        pos *= 10;
-        m = glm::translate(glm::mat4(1.0f), pos);
+    void Transform(glm::mat4 mat4) {
+        glm::mat4 transformation; // your transformation matrix.
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(m, scale, rotation, translation, skew, perspective);
 
-        //m[0][3] = pos.x;
-        //m[1][3] = pos.y;
-        //m[2][3] = pos.z;
+        glm::mat4 translat = glm::translate(glm::inverse( glm::translate(glm::mat4(1.0f), glm::vec3(mat4[3][0], mat4[3][1], mat4[3][2]))), translation);
+        glm::quat rotat = glm::quat_cast(glm::mat3(mat4));
+        m = glm::scale(translat * glm::mat4_cast(rotation) * glm::inverse(glm::mat4_cast(rotat)), scale);
+    }
+
+    void SetTransform(glm::vec3 vec) {
+        m[3][0] = vec.x;
+        m[3][1] = vec.y;
+        m[3][2] = vec.z;
     }
 
     void SetMatrix(glm::mat4 mat) {
