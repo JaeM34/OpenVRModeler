@@ -125,12 +125,11 @@ int main() {
                         snprintf(truePath, sizeof(truePath), "./models/%s", entry->d_name);
                         string path(truePath);
                         createTextureFolder(path);
+                        std::cout << "Loading object: " << entry->d_name << std::endl;
                         Model m(truePath, false);
                         models.push_back(m);
-                        std::cout << "File: " << entry->d_name << std::endl;
                         break;
                     }
-
                 }
             }
         }

@@ -23,7 +23,9 @@ public:
         vbGrid(NULL, 0),
         ibGrid(NULL, 0),
         vaGrid(),
-        layoutGrid()
+        layoutGrid(),
+        vrControllerLeft("controllers/valve_controller_knu_1_0_left.fbx", false),
+        vrControllerRight("controllers/valve_controller_knu_1_0_right.obj")
     {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -31,15 +33,6 @@ public:
         init();
 	}
 	~Scene() {};
-
-	void draw() {
-		// Create a Shader object and load shaders from files
-		for (Model& model : models) {
-            //model.Transform((vrCam.position));
-            model.shader.Bind();
-			model.Draw();
-		}
-	}
 
 	void Render() {
         glEnable(GL_DEPTH_TEST);
@@ -123,13 +116,28 @@ public:
         m_shader.SetUniform4f("U_Color", 1.0f, 1.0f, 1.0f, 0.1f);
         glLineWidth(5.0f);
         renderer.Draw(vaGrid, ibGrid, m_shader);
+
+        vrControllerLeft.shader.Bind();
+        vrControllerLeft.shader.SetMat4("view", glm::mat4(1.0f));
+        vrControllerLeft.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
+        vrControllerLeft.shader.SetVec3("viewPos", vrCam.pos);
+        vrControllerLeft.SetMatrix(vrCam.leftControllerMatrix);
+        vrControllerLeft.Draw();
+        
+        vrControllerRight.shader.Bind();
+        vrControllerRight.shader.SetMat4("view", glm::mat4(1.0f));
+        vrControllerRight.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
+        vrControllerRight.shader.SetVec3("viewPos", vrCam.pos);
+        vrControllerRight.SetMatrix(vrCam.rightControllerMatrix);
+        vrControllerRight.Draw();
+
         for (Model& model : models) {
             model.shader.Bind();
             model.shader.SetMat4("view", glm::mat4(1.0f));
             model.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
             model.shader.SetVec3("viewPos", vrCam.pos);
             if (vrCam.leftTrigger && nEye == vr::Eye_Left) {
-                model.Transform(vrCam.leftControllerDelta);
+                model.Transform(vrCam.leftControllerDelta, vrCam.leftControllerMatrix, vrCam.pos);
             }
             model.Draw();
         }
@@ -149,6 +157,8 @@ private:
     IndexBuffer ibGrid;
     VertexArray vaGrid;
     VertexBufferLayout layoutGrid;
+    Model vrControllerLeft;
+    Model vrControllerRight;
 
 
     void init() {

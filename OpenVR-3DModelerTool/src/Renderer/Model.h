@@ -81,28 +81,10 @@ public:
     // Rotate
     void RotateZ(float angles) {
         m = glm::rotate(m, glm::radians(angles), glm::vec3(0.0f, 0.0f, 1.0f));  // Update the rotation matrix
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                std::cout << m[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
     }
 
     // Transforms
     void Forward(float distance) {
-        m = glm::translate(m, glm::vec3(0.0f, 0.0f, distance / 10));
-    }
-
-    void Strafe(float distance) {
-        m = glm::translate(m, glm::vec3(distance / 10, 0.0f, 0.0f));
-    }
-
-    void Upwards(float distance) {
-        m = glm::translate(m, glm::vec3(0.0f, distance / 10, 0.0f));
-    }
-
-    void Transform(glm::mat4 mat4) {
         glm::mat4 transformation; // your transformation matrix.
         glm::vec3 scale;
         glm::quat rotation;
@@ -111,15 +93,77 @@ public:
         glm::vec4 perspective;
         glm::decompose(m, scale, rotation, translation, skew, perspective);
 
-        glm::mat4 translat = glm::translate(glm::inverse( glm::translate(glm::mat4(1.0f), glm::vec3(mat4[3][0], mat4[3][1], mat4[3][2]))), translation);
-        glm::quat rotat = glm::quat_cast(glm::mat3(mat4));
-        m = glm::scale(translat * glm::mat4_cast(rotation) * glm::inverse(glm::mat4_cast(rotat)), scale);
+        glm::mat4 translat = glm::translate(glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, distance / 10))), translation);
+        m = glm::scale(translat * glm::mat4_cast(rotation), scale);
     }
 
-    void SetTransform(glm::vec3 vec) {
-        m[3][0] = vec.x;
-        m[3][1] = vec.y;
-        m[3][2] = vec.z;
+    void Strafe(float distance) {
+        glm::mat4 transformation; // your transformation matrix.
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(m, scale, rotation, translation, skew, perspective);
+
+        glm::mat4 translat = glm::translate(glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(distance / 10, 0.0f, 0.0f))), translation);
+        m = glm::scale(translat * glm::mat4_cast(rotation), scale);
+    }
+
+    void Upwards(float distance) {
+        glm::mat4 transformation; // your transformation matrix.
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(m, scale, rotation, translation, skew, perspective);
+
+        glm::mat4 translat = glm::translate(glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, distance / 10, 0.0f))), translation);
+        m = glm::scale(translat * glm::mat4_cast(rotation), scale);
+    }
+
+    void Transform(glm::mat4 mat4, glm::mat4 mat, glm::vec3 pos) {
+        glm::mat4 transformation; // your transformation matrix.
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(m, scale, rotation, translation, skew, perspective);
+
+        glm::mat4 difference = m - mat;
+        glm::vec3 xAxis(difference[0][0], difference[1][0], difference[2][0]);
+        glm::vec3 yAxis(difference[0][1], difference[1][1], difference[2][1]);
+        glm::vec3 zAxis(difference[0][2], difference[1][2], difference[2][2]);
+        float distX = glm::length(xAxis);
+        float distY = glm::length(yAxis);
+        float distZ = glm::length(zAxis);
+
+        distX = std::abs(translation.x - pos.x);
+        distY = std::abs(translation.y - pos.y);
+        distZ = std::abs(translation.z - pos.z);
+
+        std::cout << "Distance" << distX << std::endl;
+        std::cout << "Distance" << distY << std::endl;
+        std::cout << "Distance" << distZ << std::endl;
+
+        std::cout << "Translate Mat X: " << mat4[3][0] << std::endl;
+        std::cout << "Translate Mat Y: " << mat4[3][1] << std::endl;
+        std::cout << "Translate Mat Z: " << mat4[3][2] << std::endl;
+
+        std::cout << "Model Mat X: " << m[3][0] << std::endl;
+        std::cout << "Model Mat Y: " << m[3][1] << std::endl;
+        std::cout << "Model Mat Z: " << m[3][2] << std::endl;
+
+        glm::vec3 totalDistance = xAxis + yAxis + zAxis;
+        float length = glm::length(totalDistance);
+        std::cout << "Total distance: " << length << endl;
+        length = distX + distY + distZ;
+        std::cout << "Total distance2: " << length << endl;
+        glm::mat4 translat = glm::translate(glm::inverse( glm::translate(glm::mat4(1.0f), glm::vec3(mat4[3][0] * length, mat4[3][1] * length, mat4[3][2] * length))), translation);
+        glm::quat rotat = glm::quat_cast(glm::mat3(mat4));
+        m = glm::scale(translat * glm::mat4_cast(rotation) * glm::inverse(glm::mat4_cast(rotat)), scale);
     }
 
     void SetMatrix(glm::mat4 mat) {
