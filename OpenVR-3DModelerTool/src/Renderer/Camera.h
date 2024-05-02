@@ -38,12 +38,6 @@ public:
     void OnRender();
 
     void Rotate(float yaw, float pitch);
-    //void Rotate(glm::quat &q);
-    //void RotateX(float radians);
-    //void RotateY(float radians);
-    //void RotateZ(float radians);
-    void Transform(float x, float y, float z);
-
     void MoveForward(float distance);
     void MoveUpwards(float distance);
     void MoveSideways(float distance);

@@ -109,6 +109,10 @@ public:
         //m[2][3] = pos.z;
     }
 
+    void SetMatrix(glm::mat4 mat) {
+        m = mat;
+    }
+
 private:
     string m_path;
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

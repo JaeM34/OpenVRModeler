@@ -128,6 +128,7 @@ public:
             model.shader.SetMat4("view", glm::mat4(1.0f));
             model.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
             model.shader.SetVec3("viewPos", vrCam.pos);
+            model.SetMatrix(vrCam.leftControllerMatrix);
             model.Draw();
         }
     }
