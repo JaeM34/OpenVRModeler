@@ -122,8 +122,13 @@
       <Command>xcopy /y /d "$(SolutionDir)Dependencies\openvr-2.5.1\openvr-2.5.1\bin\win64" "$(OutDir)"
 xcopy /y /d "$(SolutionDir)Dependencies\assimp\bin" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)shaders" "$(OutDir)shaders\"
+xcopy /y /d "$(ProjectDir)controllers\" "$(OutDir)controllers\"
 if not exist "$(OutDir)models\" mkdir "$(OutDir)models\"
-if not exist "$(OutDir)textures\" mkdir "$(OutDir)textures\"</Command>
+if not exist "$(OutDir)textures\" mkdir "$(OutDir)textures\"
+if not exist "$(OutDir)textures\valve_controller_knu_1_0_left\" mkdir "$(OutDir)textures\valve_controller_knu_1_0_left\"
+if not exist "$(OutDir)textures\valve_controller_knu_1_0_right\" mkdir "$(OutDir)textures\valve_controller_knu_1_0_right\"
+echo f | xcopy /y /f "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\OpenVR-3DModelerTool\controllers\valve_controller_knu_1_0_left_diff.png" "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\x64\Debug\textures\valve_controller_knu_1_0_left\diffuse.png"
+echo f | xcopy /y /f "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\OpenVR-3DModelerTool\controllers\valve_controller_knu_1_0_right_diff.png" "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\x64\Debug\textures\valve_controller_knu_1_0_right\diffuse.png"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,8 +153,13 @@ if not exist "$(OutDir)textures\" mkdir "$(OutDir)textures\"</Command>
       <Command>xcopy /y /d "$(SolutionDir)Dependencies\openvr-2.5.1\openvr-2.5.1\bin\win64" "$(OutDir)"
 xcopy /y /d "$(SolutionDir)Dependencies\assimp\bin" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)shaders" "$(OutDir)shaders\"
+xcopy /y /d "$(ProjectDir)controllers\" "$(OutDir)controllers\"
 if not exist "$(OutDir)models\" mkdir "$(OutDir)models\"
-if not exist "$(OutDir)textures\" mkdir "$(OutDir)textures\"</Command>
+if not exist "$(OutDir)textures\" mkdir "$(OutDir)textures\"
+if not exist "$(OutDir)textures\valve_controller_knu_1_0_left\" mkdir "$(OutDir)textures\valve_controller_knu_1_0_left\"
+if not exist "$(OutDir)textures\valve_controller_knu_1_0_right\" mkdir "$(OutDir)textures\valve_controller_knu_1_0_right\"
+echo f | xcopy /y /f "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\OpenVR-3DModelerTool\controllers\valve_controller_knu_1_0_left_diff.png" "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\x64\Debug\textures\valve_controller_knu_1_0_left\diffuse.png"
+echo f | xcopy /y /f "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\OpenVR-3DModelerTool\controllers\valve_controller_knu_1_0_right_diff.png" "C:\Users\deft\Documents\Classes\Comp490\test\OpenVRModeler\x64\Debug\textures\valve_controller_knu_1_0_right\diffuse.png"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

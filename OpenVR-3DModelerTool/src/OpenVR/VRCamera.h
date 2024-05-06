@@ -9,7 +9,8 @@ class VRCamera {
 public:
     float m_fNearClip = 0.1f;
     float m_fFarClip = 100.0f;
-    glm::vec3 pos = glm::vec3(1.0f);
+    glm::vec3 pos{ 1.0f };
+    glm::vec3 posDelta{ 0.0f };
     float dist = 0.0f;
     float yaw = 0.0f;
     glm::vec3 position{0.0f};
@@ -21,6 +22,14 @@ public:
     glm::mat4 rightControllerMatrixLast;
     glm::mat4 leftControllerDelta;
     glm::mat4 rightControllerDelta;
+    
+    bool leftControllerA[2];
+    bool leftControllerB[2];
+    bool rightControllerA[2];
+    bool rightControllerB[2];
+
+    bool leftTriggerHeld;
+    bool rightTriggerHeld;
 
     bool leftTrigger;
     bool rightTrigger;
@@ -54,14 +63,10 @@ public:
         vr::TrackedDeviceIndex_t leftControllerIndex = vr::k_unTrackedDeviceIndexInvalid;
         vr::TrackedDeviceIndex_t rightControllerIndex = vr::k_unTrackedDeviceIndexInvalid;
 
-        leftTrigger = false;
-        rightTrigger = false;
-        leftGrip = false;
-        rightGrip = false;
-
         leftControllerMatrixLast = leftControllerMatrix;
         rightControllerMatrixLast = rightControllerMatrix;
         m_mat4HMDPose *= rotationMatrix;
+        posDelta = pos;
         for (vr::TrackedDeviceIndex_t deviceIndex = 0; deviceIndex < vr::k_unMaxTrackedDeviceCount; deviceIndex++) {
             if (m_pHMD->IsTrackedDeviceConnected(deviceIndex)) {
                 vr::VRControllerState_t controllerState;
@@ -73,9 +78,14 @@ public:
                 if (packetNum != 0) {
                     //  Left Controller
                     if (controllerRole == vr::TrackedControllerRole_LeftHand) {
-                        if (controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) {
-                            leftTrigger = true;
-                        }
+                        leftTriggerHeld = leftTrigger && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger);
+                        leftTrigger = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger);
+                        leftGrip = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Grip);
+                        leftControllerA[1] = leftControllerA[0] && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_DPad_Down);
+                        leftControllerA[0] = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_DPad_Down);
+                        leftControllerB[1] = leftControllerB[0] && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_ApplicationMenu);
+                        leftControllerB[0] = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_ApplicationMenu);
+
                         //  Move Forward
                         MoveForward(deadzoned(controllerState.rAxis[0].y, 0.5f) / 10);
 
@@ -90,6 +100,13 @@ public:
                     }
                     // Right controller
                     else if (controllerRole == vr::TrackedControllerRole_RightHand) {
+                        rightTriggerHeld = rightTrigger && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger);
+                        rightTrigger = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger);
+                        rightGrip = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Grip);
+                        rightControllerA[1] = rightControllerA[0] && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_DPad_Down);
+                        rightControllerA[0] = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_DPad_Down);
+                        rightControllerB[1] = rightControllerB[0] && controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_ApplicationMenu);
+                        rightControllerB[0] = controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_ApplicationMenu);
                         //  Rotate Left or Right
                         yaw += glm::radians(deadzoned(controllerState.rAxis[0].x, 0.95f));
                         rotationMatrix = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -106,11 +123,13 @@ public:
                 }
             }
         }
+        posDelta -= pos;
         // Calculate the deltas of controller movement
         glm::mat4 deltaMat;
         glm::quat rotatationCurrent;
         glm::quat rotationLast;
         glm::quat rotation_delta;
+        float threshold = 0.001f;
         // Calculate delta of Left Controller
         deltaMat = leftControllerMatrixLast - leftControllerMatrix;
         rotatationCurrent = glm::quat_cast(glm::mat3(leftControllerMatrixLast));
@@ -121,6 +140,13 @@ public:
         leftControllerDelta[3][0] = deltaMat[3][0];
         leftControllerDelta[3][1] = deltaMat[3][1];
         leftControllerDelta[3][2] = deltaMat[3][2];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (std::abs(leftControllerDelta[i][j]) < threshold) {
+                    leftControllerDelta[i][j] = 0;
+                }
+            }
+        }
 
         // Calculate Delta of Right Controller
         deltaMat = rightControllerMatrixLast - rightControllerMatrix;
@@ -131,6 +157,13 @@ public:
         rightControllerDelta[3][0] = deltaMat[3][0];
         rightControllerDelta[3][1] = deltaMat[3][1];
         rightControllerDelta[3][2] = deltaMat[3][2];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (std::abs(rightControllerDelta[i][j]) < threshold) {
+                    rightControllerDelta[i][j] = 0;
+                }
+            }
+        }
     }
 
     void MoveForward(float distance) {
@@ -185,6 +218,10 @@ public:
         {
             return rightEyeDesc;
         }
+    }
+
+    void Terminate() {
+        vr::VR_Shutdown();
     }
 
 private:
@@ -326,17 +363,15 @@ private:
 
     glm::mat4 GetHMDMatrixPoseEye(vr::Hmd_Eye nEye)
     {
-
-        vr::HmdMatrix34_t matEyeRight = m_pHMD->GetEyeToHeadTransform(nEye);
+        vr::HmdMatrix34_t matEye = m_pHMD->GetEyeToHeadTransform(nEye);
         glm::mat4 matrixObj(
-            matEyeRight.m[0][0], matEyeRight.m[1][0], matEyeRight.m[2][0], 0.0,
-            matEyeRight.m[0][1], matEyeRight.m[1][1], matEyeRight.m[2][1], 0.0,
-            matEyeRight.m[0][2], matEyeRight.m[1][2], matEyeRight.m[2][2], 0.0,
-            matEyeRight.m[0][3], matEyeRight.m[1][3], matEyeRight.m[2][3], 1.0f
+            matEye.m[0][0], matEye.m[1][0], matEye.m[2][0], 0.0,
+            matEye.m[0][1], matEye.m[1][1], matEye.m[2][1], 0.0,
+            matEye.m[0][2], matEye.m[1][2], matEye.m[2][2], 0.0,
+            matEye.m[0][3], matEye.m[1][3], matEye.m[2][3], 1.0f
         );
 
         return glm::inverse(matrixObj);
-        //return matrixObj;
     }
 
 };

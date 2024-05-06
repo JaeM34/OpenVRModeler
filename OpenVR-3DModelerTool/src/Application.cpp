@@ -298,6 +298,7 @@ int main() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     glfwTerminate();
+    scene.Close();
 
     return 0;
 }

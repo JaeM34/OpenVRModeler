@@ -12,8 +12,8 @@
 
 class Scene {
 public:
-	std::vector<Model> models;
-	Camera& camera;
+    std::vector<Model> models;
+    Camera& camera;
     VRCamera vrCam;
 
     Scene(std::vector<Model> models, Camera& camera, Shader& shader) :
@@ -25,16 +25,16 @@ public:
         vaGrid(),
         layoutGrid(),
         vrControllerLeft("controllers/valve_controller_knu_1_0_left.fbx", false),
-        vrControllerRight("controllers/valve_controller_knu_1_0_right.obj")
+        vrControllerRight("controllers/valve_controller_knu_1_0_right.fbx", false)
     {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
         init();
-	}
-	~Scene() {};
+    }
+    ~Scene() {};
 
-	void Render() {
+    void Render() {
         glEnable(GL_DEPTH_TEST);
 
         m_shader.Bind();
@@ -65,9 +65,10 @@ public:
             model.shader.SetVec3("viewPos", camera.m_Position);
             model.Draw();
         }
-	}
+    }
 
     void RenderStereoTargets() {
+        ProcessInputs();
         RenderTarget(vr::Eye_Left, vrCam.GetFrameBufferDesc(vr::Eye_Left));
         RenderTarget(vr::Eye_Right, vrCam.GetFrameBufferDesc(vr::Eye_Right));
         vrCam.RenderFrame();
@@ -117,30 +118,20 @@ public:
         glLineWidth(5.0f);
         renderer.Draw(vaGrid, ibGrid, m_shader);
 
-        vrControllerLeft.shader.Bind();
-        vrControllerLeft.shader.SetMat4("view", glm::mat4(1.0f));
-        vrControllerLeft.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
-        vrControllerLeft.shader.SetVec3("viewPos", vrCam.pos);
-        vrControllerLeft.SetMatrix(vrCam.leftControllerMatrix);
-        vrControllerLeft.Draw();
-        
-        vrControllerRight.shader.Bind();
-        vrControllerRight.shader.SetMat4("view", glm::mat4(1.0f));
-        vrControllerRight.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
-        vrControllerRight.shader.SetVec3("viewPos", vrCam.pos);
-        vrControllerRight.SetMatrix(vrCam.rightControllerMatrix);
-        vrControllerRight.Draw();
+        renderControllers(nEye);
 
         for (Model& model : models) {
             model.shader.Bind();
             model.shader.SetMat4("view", glm::mat4(1.0f));
             model.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
             model.shader.SetVec3("viewPos", vrCam.pos);
-            if (vrCam.leftTrigger && nEye == vr::Eye_Left) {
-                model.Transform(vrCam.leftControllerDelta, vrCam.leftControllerMatrix, vrCam.pos);
-            }
             model.Draw();
         }
+    }
+
+    void Close() {
+        models.clear();
+        vrCam.Terminate();
     }
 		
 private:
@@ -159,6 +150,7 @@ private:
     VertexBufferLayout layoutGrid;
     Model vrControllerLeft;
     Model vrControllerRight;
+    unsigned int selection = 0;
 
 
     void init() {
@@ -205,6 +197,68 @@ private:
                 gridIndices.push_back(baseIndex + 3);
                 gridIndices.push_back(baseIndex);
             }
+        }
+    }
+
+    void renderControllers(vr::Hmd_Eye nEye) {
+        vrControllerLeft.shader.Bind();
+        vrControllerLeft.shader.SetMat4("view", glm::mat4(1.0f));
+        vrControllerLeft.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
+        vrControllerLeft.shader.SetVec3("viewPos", vrCam.pos);
+        vrControllerLeft.SetMatrix(vrCam.leftControllerMatrix);
+        vrControllerLeft.Draw();
+
+        vrControllerRight.shader.Bind();
+        vrControllerRight.shader.SetMat4("view", glm::mat4(1.0f));
+        vrControllerRight.shader.SetMat4("projection", vrCam.GetCurrentViewProjectionMatrix(nEye));
+        vrControllerRight.shader.SetVec3("viewPos", vrCam.pos);
+        vrControllerRight.SetMatrix(vrCam.rightControllerMatrix);
+        vrControllerRight.Draw();
+    }
+
+    void ProcessInputs() {
+        if (models.size() < 1) {
+            return;
+        }
+        if (selection > models.size()) {
+            selection = models.size()-1;
+        }
+        // Controls
+        Model& mod = models[selection];
+        if ((vrCam.leftControllerB[0] && !vrCam.leftControllerB[1] && vrCam.rightControllerB[0] && !vrCam.rightControllerB[1]) ||
+            (vrCam.leftControllerB[0] && vrCam.leftControllerB[1] && vrCam.rightControllerB[0] && !vrCam.rightControllerB[1]) ||
+            (vrCam.leftControllerB[0] && !vrCam.leftControllerB[1] && vrCam.rightControllerB[0] && vrCam.rightControllerB[1])) {
+            Model m = *new Model(mod);
+            models.insert(models.begin() + selection, m);
+        }
+        else if (vrCam.leftControllerB[0] && !vrCam.leftControllerB[1]) {
+            if(selection > 0)
+                selection--;
+        }
+        else if (vrCam.rightControllerB[0] && !vrCam.rightControllerB[1]) {
+            if (selection < models.size()-1)
+                selection++;
+        }
+        if ((vrCam.leftTrigger && vrCam.rightTrigger && !vrCam.leftTriggerHeld && !vrCam.rightTriggerHeld) ||
+            (vrCam.leftTrigger && vrCam.rightTrigger && vrCam.leftTriggerHeld && !vrCam.rightTriggerHeld) ||
+            (vrCam.leftTrigger && vrCam.rightTrigger && !vrCam.leftTriggerHeld && vrCam.rightTriggerHeld)) {
+            models.erase(models.begin() + selection);
+        }
+        else if (vrCam.leftTrigger) {
+            mod.Rotate(vrCam.leftControllerDelta);
+        }
+        else if (vrCam.rightTrigger) {
+            mod.Rotate(vrCam.rightControllerDelta);
+        }
+        if (vrCam.leftGrip && vrCam.rightGrip) {
+            mod.Scale(vrCam.leftControllerDelta, vrCam.rightControllerDelta, vrCam.leftControllerMatrix, vrCam.rightControllerMatrix);
+            // Scale
+        }
+        else if (vrCam.leftGrip) {
+            mod.Transform(vrCam.leftControllerDelta, vrCam.leftControllerMatrix, vrCam.pos, vrCam.posDelta);
+        }
+        else if (vrCam.rightGrip) {
+            mod.Transform(vrCam.rightControllerDelta, vrCam.rightControllerMatrix, vrCam.pos, vrCam.posDelta);
         }
     }
 };
